@@ -42,16 +42,18 @@ match schnorr.recover_decryption_key(&encryption_key, &encrypted_signature, &sig
 }
 }
 
+// Function to generate a random key pair, compressed public key, and Bitcoin address
 fn rand_pair_gen() {
-        // Generate random key pair.
-        let s = Secp256k1::new();
-        let public_key = s.generate_keypair(&mut rand::thread_rng()).1;
-        let compressed_public_key = PublicKey::new(public_key);
-    
-        // Generate pay-to-pubkey-hash address.
-        let address = Address::p2pkh(&compressed_public_key, Network::Bitcoin);
-    
-        println!("This is (uncompressed) public key: {:?}\n", public_key.serialize_uncompressed());
-        println!("This is compressed public key: {}", compressed_public_key);
-        println!("This is bitcoin address: {}", address);
+    // Generate random key pair.
+    let s = Secp256k1::new();
+    let public_key = s.generate_keypair(&mut rand::thread_rng()).1;
+    let compressed_public_key = PublicKey::new(public_key);
+
+    // Generate pay-to-pubkey-hash address.
+    let address = Address::p2pkh(&compressed_public_key, Network::Bitcoin);
+
+    // Print the uncompressed public key, compressed public key, and Bitcoin address.
+    println!("This is (uncompressed) public key: {:?}\n", public_key.serialize_uncompressed());
+    println!("This is compressed public key: {}", compressed_public_key);
+    println!("This is bitcoin address: {}", address);
 }
