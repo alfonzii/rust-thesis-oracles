@@ -1,9 +1,8 @@
 use core::time;
-use std::thread;
-use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::Rng;
+use std::thread;
 
-use thread_broadcaster::Controller;
 use bitcoin::secp256k1::rand;
 use schnorr_fun::{
     adaptor::Adaptor,
@@ -11,8 +10,7 @@ use schnorr_fun::{
     Schnorr,
 };
 use sha2::Sha256;
-
-
+use thread_broadcaster::Controller;
 
 pub fn oracle_main(broadcaster: Controller<String>) {
     let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
