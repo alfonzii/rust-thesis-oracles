@@ -42,6 +42,7 @@ fn demo() {
     }
 }
 
+// Function to generate a random key pair, compressed public key, and Bitcoin address
 fn rand_pair_gen() {
     #![allow(dead_code)]
     // Generate random key pair.
