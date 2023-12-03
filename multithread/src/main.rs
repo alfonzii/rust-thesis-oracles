@@ -2,12 +2,13 @@ mod oracle;
 mod user;
 
 use crossbeam_channel::Sender;
+use oracle::OracleBroadcastType;
 use secp256kfun::{marker::*, Point, Scalar};
 use std::{sync::mpsc, thread};
 use thread_broadcaster::{BroadcastListener, Broadcaster};
 
 fn main() {
-    let (b, s1) = Broadcaster::<[u8; 33]>::new();
+    let (b, s1) = Broadcaster::<OracleBroadcastType>::new();
     let s2 = s1.clone();
     let ls1 = BroadcastListener::register_broadcast_listener(s1);
     let ls2 = BroadcastListener::register_broadcast_listener(s2);
@@ -33,6 +34,12 @@ fn main() {
 
 fn get_from_bigger_arr(source: &[u8], destination: &mut [u8]) {
     for i in 0..destination.len().min(source.len()) {
+        destination[i] = source[i];
+    }
+}
+
+fn copy_in_bigger_arr(source: &[u8], destination: &mut [u8]) {
+    for i in 0..source.len().min(destination.len()) {
         destination[i] = source[i];
     }
 }

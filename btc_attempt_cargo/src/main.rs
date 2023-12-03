@@ -10,7 +10,7 @@ use schnorr_fun::{
 use sha2::Sha256;
 
 fn main() {
-    byte_channel_point_experiment();
+    enum_channel_experiment();
 }
 
 fn demo() {
@@ -65,6 +65,7 @@ use std::sync::mpsc;
 use std::thread;
 
 fn byte_channel_string_experiment() {
+    #![allow(dead_code)]
     // Create a channel for sending bytes
     let (tx, rx) = mpsc::channel();
 
@@ -101,6 +102,7 @@ fn byte_channel_string_experiment() {
 use secp256kfun::Point;
 
 fn byte_channel_point_experiment() {
+    #![allow(dead_code)]
     // Create a channel for sending bytes
     let (tx, rx) = mpsc::channel();
 
@@ -130,5 +132,41 @@ fn byte_channel_point_experiment() {
     tx.send(arr_bytes).unwrap();
 
     // Wait for the secondary thread to finish
+    handle.join().unwrap();
+}
+
+enum ChannelData {
+    Statement(Point),
+    Witness(Scalar),
+}
+
+fn enum_channel_experiment() {
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+    let scalar = Scalar::random(&mut rand::thread_rng());
+    let point: Point = schnorr.encryption_key_for(&scalar);
+
+    // print scalar and point to console with their thread id (main thread)
+    println!("Scalar: {} on thread {:?}", scalar, thread::current().id());
+    println!("Point: {} on thread {:?}", point, thread::current().id());
+
+    let (tx, rx) = mpsc::channel();
+
+    let handle = thread::spawn(move || {
+        let received_statement: ChannelData = rx.recv().unwrap();
+        let received_witness: ChannelData = rx.recv().unwrap();
+
+        if let ChannelData::Statement(point) = received_statement {
+            println!("Hey, I got statement '{}' string from the main thread", point);
+        }
+
+        if let ChannelData::Witness(scalar) = received_witness {
+            println!("Hey, I got witness '{}' string from the main thread", scalar);
+        }
+    });
+
+    tx.send(ChannelData::Statement(point)).unwrap();
+    tx.send(ChannelData::Witness(scalar)).unwrap();
+
     handle.join().unwrap();
 }

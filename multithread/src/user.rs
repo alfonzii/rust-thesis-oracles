@@ -1,5 +1,7 @@
+// Standard library imports
 use std::sync::mpsc::{Receiver, Sender};
 
+// External imports
 use bitcoin::secp256k1::rand;
 use rand::rngs::ThreadRng;
 use schnorr_fun::adaptor::EncryptedSignature;
@@ -10,14 +12,14 @@ use schnorr_fun::{
 };
 use secp256kfun::Point;
 use sha2::Sha256;
-use std::thread;
 use thread_broadcaster::BroadcastListener;
 
-use crate::get_from_bigger_arr;
+// Custom imports
+use crate::oracle::OracleBroadcastType;
 
 pub fn user_main(
     my_name: String,
-    oracle_listener: BroadcastListener<[u8; 33]>,
+    oracle_listener: BroadcastListener<OracleBroadcastType>,
     other_user_trsm: Sender<EncryptedSignature>,
     other_user_recv: Receiver<EncryptedSignature>,
     //blockchain_channel: Sender<String>,
@@ -28,7 +30,7 @@ pub fn user_main(
 
     // Generate signing key and verification key
     let signing_keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
-    //let verification_key = signing_keypair.public_key();
+    let verification_key = signing_keypair.public_key();
 
     // Create other_user String
     let other_user: String = match my_name.as_str() {
@@ -43,11 +45,22 @@ pub fn user_main(
     let message = format!("Send 1 BTC to {}", other_user);
     let tx_message = Message::<Public>::plain("text-bitcoin", message.as_bytes());
 
-    // Receive Y_a and Y_b from oracle in byte array form
-    let byte_statement_a = oracle_listener.channel.recv().unwrap();
-    let byte_statement_b = oracle_listener.channel.recv().unwrap();
-    let Y_a = Point::<_, Public, NonZero>::from_bytes(byte_statement_a).unwrap();
-    let Y_b = Point::<_, Public, NonZero>::from_bytes(byte_statement_b).unwrap();
+    // Receive Y_a and Y_b from oracle
+    let received_statement_a = oracle_listener.channel.recv().unwrap();
+    let received_statement_b = oracle_listener.channel.recv().unwrap();
+    let mut Y_a;
+    let mut Y_b;
+
+    if let OracleBroadcastType::Statement(statement_a) = received_statement_a {
+        Y_a = statement_a;
+    } else {
+        panic!("Unexpected value in received_statement_a");
+    }
+    if let OracleBroadcastType::Statement(statement_b) = received_statement_b {
+        Y_b = statement_b;
+    } else {
+        panic!("Unexpected value in received_statement_b");
+    }
 
     // Create pre-signature
     let presignature: EncryptedSignature = if my_name == "Alice" {
@@ -76,12 +89,12 @@ pub fn user_main(
 
     // Listen to oracle and wait for witness broadcast
     let msg_witness = oracle_listener.channel.recv().unwrap();
-    let mut witness_byte_arr: [u8; 32] = [0; 32];
-    get_from_bigger_arr(&msg_witness, &mut witness_byte_arr);
-    let witness_scalar_zero = Scalar::<Secret, _>::from_bytes(witness_byte_arr).unwrap();
-    let witness_scalar = witness_scalar_zero.non_zero().unwrap();
-
-    //let scalar = Scalar::random(&mut rand::thread_rng());
+    let mut witness_scalar;
+    if let OracleBroadcastType::Witness(witness) = msg_witness {
+        witness_scalar = witness;
+    } else {
+        panic!("Unexpected value in msg_witness");
+    }
 
     // Adapt pre-signature
     let signature = schnorr.decrypt_signature(witness_scalar.clone(), other_presignature.clone());
