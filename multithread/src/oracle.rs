@@ -25,20 +25,22 @@ pub fn oracle_main(broadcaster: Controller<OracleBroadcastType>) {
 
     // Create witness/statement pair for Alice situation
     let y_a: Scalar<_, NonZero> = Scalar::random(&mut rand::thread_rng());
+    #[allow(non_snake_case)]
     let Y_a = schnorr.encryption_key_for(&y_a);
 
     // Create witness/statement pair for Bob situation
     let y_b: Scalar<_, NonZero> = Scalar::random(&mut rand::thread_rng());
+    #[allow(non_snake_case)]
     let Y_b = schnorr.encryption_key_for(&y_b);
 
     // we wait for registration of Alice & Bob
     thread::sleep(time::Duration::from_secs(2));
 
     // Print debug messages from oracle
-    println!("[Oracle]: Y_a: {}", Y_a);
+    println!("\n[Oracle]: Y_a: {}", Y_a);
     println!("[Oracle]: Y_b: {}", Y_b);
-    println!("[Oracle]: y_a: {}", y_a);
-    println!("[Oracle]: y_b: {}", y_b);
+    println!("[Oracle]: y_a (but it's unknown to users yet): {}", y_a);
+    println!("[Oracle]: y_b (but it's unknown to users yet): {}\n", y_b);
 
     // Broadcast statements to Alice & Bob
     broadcaster.broadcast(OracleBroadcastType::Statement(Y_a));

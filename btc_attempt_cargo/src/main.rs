@@ -10,7 +10,7 @@ use schnorr_fun::{
 use sha2::Sha256;
 
 fn main() {
-    enum_channel_experiment();
+    pair_channel_experiment();
 }
 
 fn demo() {
@@ -53,10 +53,7 @@ fn rand_pair_gen() {
     // Generate pay-to-pubkey-hash address.
     let address = Address::p2pkh(&compressed_public_key, Network::Bitcoin);
 
-    println!(
-        "This is (uncompressed) public key: {:?}\n",
-        public_key.serialize_uncompressed()
-    );
+    println!("This is (uncompressed) public key: {:?}\n", public_key.serialize_uncompressed());
     println!("This is compressed public key: {}", compressed_public_key);
     println!("This is bitcoin address: {}", address);
 }
@@ -167,6 +164,41 @@ fn enum_channel_experiment() {
 
     tx.send(ChannelData::Statement(point)).unwrap();
     tx.send(ChannelData::Witness(scalar)).unwrap();
+
+    handle.join().unwrap();
+}
+
+use schnorr_fun::adaptor::EncryptedSignature;
+fn pair_channel_experiment() {
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+
+    // Generate signing key and verification key
+    let signing_keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+    let verification_key = signing_keypair.public_key();
+
+    // Create witness/statement pair for Alice situation
+    let y_a: Scalar<_, NonZero> = Scalar::random(&mut rand::thread_rng());
+    let Y_a = schnorr.encryption_key_for(&y_a);
+
+    let presignature = schnorr.encrypted_sign(&signing_keypair, &Y_a, Message::<Public>::plain("text-bitcoin", b"send 1 BTC to Bob"));
+
+    type Pair = (EncryptedSignature, Point<EvenY>, Point);
+
+    let (tx, rx) = mpsc::channel();
+
+    let handle = thread::spawn(move || {
+        let received_pair: Pair = rx.recv().unwrap();
+
+        let (encrypted_signature, v_k, statement) = received_pair;
+
+        assert!(schnorr.verify_encrypted_signature(&v_k, &statement, Message::<Public>::plain("text-bitcoin", b"send 1 BTC to Bob"), &encrypted_signature));
+
+        println!("Hey, I got v_k '{}' string from the main thread", v_k);
+        println!("Hey, I got statement '{}' string from the main thread", statement);
+    });
+
+    tx.send((presignature, verification_key, Y_a)).unwrap();
 
     handle.join().unwrap();
 }
