@@ -1,0 +1,13 @@
+[package]
+name = "wes"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+blsful = "2.4.1"
+rand = { version = "0.8.5", features = ["std"] }
+sha2 = "0.10.8"
+secp256kfun = "0.9.1"
+schnorr_fun = "0.9.1"
