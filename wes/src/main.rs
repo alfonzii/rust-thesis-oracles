@@ -1,11 +1,8 @@
-//use std::ops::AddAssign;
-
 use blsful::inner_types;
+use blsful::inner_types::elliptic_curve::ops::Add;
 use blsful::inner_types::elliptic_curve::ops::AddAssign;
 use blsful::inner_types::elliptic_curve::ops::Mul;
 use blsful::inner_types::elliptic_curve::ops::Neg;
-use blsful::Bls12381G1Impl;
-use blsful::Pairing;
 
 use blsful::inner_types::Curve;
 use blsful::inner_types::ExpandMsgXmd;
@@ -27,15 +24,17 @@ use rand::Rng;
 
 use sha2::{Digest, Sha256};
 
+// Witness encryption based on BLS signatures
+
 fn main() {
     test_pairing();
-    //test_debug();
+    test_random();
 
-    test1();
+    test_debug();
 }
 
 fn enc((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32]) -> (G1Projective, Gt, [u8; 32]) {
-    // Prepare scalar for r1
+    // Prepare valid random scalar for r1
     let mut rng = rand::thread_rng();
     let mut montgomery = [0u64; 4];
     let mut scal: CtOption<Scalar> = CtOption::new(Scalar::default(), Choice::from(0));
@@ -48,7 +47,7 @@ fn enc((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32]) -> (G1Proje
     let r1 = scal.expect("Failed to generate a valid scalar from raw");
     let r2 = Gt::random(rng.clone());
 
-    // Set c1 := g0^r1
+    // Set c1 := g1^r1
     let c1 = G1Projective::mul_by_generator(&r1);
 
     // Compute h := H_1(r2)
@@ -65,10 +64,9 @@ fn enc((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32]) -> (G1Proje
     let c2 = pairing_result;
 
     // Compute c3 := (h + m) -- xor
-    let m_bytes = m;
     let mut c3 = [0u8; 32];
     for i in 0..32 {
-        c3[i] = m_bytes[i] ^ h[i];
+        c3[i] = m[i] ^ h[i];
     }
     let c3 = c3;
 
@@ -76,14 +74,14 @@ fn enc((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32]) -> (G1Proje
     (c1, c2, c3)
 }
 
-fn dec(signature: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, Gt, [u8; 32])) -> [u8; 32] {
+fn dec(sig_: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, Gt, [u8; 32])) -> [u8; 32] {
     // Parse c := (c1, c2, c3)
     // trivially done
 
-    // Compute r := c2 * e(c1, signature)^-1
-    let pairing_result = inner_types::pairing(&c1.to_affine(), &signature.as_raw_value().to_affine());
+    // Compute r := c2 * e(c1, sig_)^-1
+    let pairing_result = inner_types::pairing(&c1.to_affine(), &sig_.as_raw_value().to_affine());
     let neg_p_result = pairing_result.neg();
-    let r = neg_p_result.mul(&c2);
+    let r = neg_p_result.add(&c2);
 
     // Compute h := H_1(r)
     let r_bytes = r.to_bytes();
@@ -101,8 +99,7 @@ fn dec(signature: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, Gt, [u
     m
 }
 
-fn enc_debug((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32], sig: &Signature<Bls12381G2Impl>) -> (G1Projective, Gt, [u8; 32]) {
-    // DEBUG
+fn enc_debug((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32], sig_: &Signature<Bls12381G2Impl>) -> (G1Projective, Gt, [u8; 32]) {
     println!("STARTING ENC_DEBUG FUNCTION");
 
     // Prepare scalar for r1
@@ -133,60 +130,54 @@ fn enc_debug((vk_, m_): (&PublicKey<Bls12381G2Impl>, &[u8]), m: &[u8; 32], sig: 
     r2_bytes.as_mut().copy_from_slice(&r2seed);
     let r2 = Gt::from_bytes(&r2_bytes).expect("Failed to generate a valid scalar from raw");
 
-    // Set c1 := g0^r1
+    // Set c1 := g1^r1
     let c1 = G1Projective::mul_by_generator(&r1);
 
     // Compute h := H_1(r2)
-    //let r2_bytes = r2.to_bytes();
     let mut hasher = Sha256::new();
     hasher.update(r2_bytes);
     let h = hasher.finalize();
-    // DEBUG
+
     println!("ENC_DEBUG h: {:?}", h);
 
     // Compute c2 := ( e(vk_, H_0(m_))^r1 * r2 )
     let h0 = G2Projective::hash::<ExpandMsgXmd<sha2::Sha256>>(m_, b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_");
-    let beta = inner_types::pairing(&vk_.0.to_affine(), &h0.to_affine());
-    let mut pairing_result = beta;
+    let mut pairing_result = inner_types::pairing(&vk_.0.to_affine(), &h0.to_affine());
     pairing_result = pairing_result.mul(&r1);
     let beta = pairing_result;
     pairing_result.add_assign(&r2);
     let c2 = pairing_result;
 
     // TEST
-    // p: &G1Projective::generator().to_affine()
-    let beta2 = inner_types::pairing(&c1.to_affine(), &sig.as_raw_value().to_affine());
+    let beta2 = inner_types::pairing(&c1.to_affine(), &sig_.as_raw_value().to_affine());
     // assert that beta and beta2 are equal
     assert_eq!(beta, beta2);
     println!("beta == beta2: {:?}", beta == beta2);
     //------------------------------------------------------------------------------------------
 
     // Compute c3 := (h + m) -- xor
-    let m_bytes = m;
     let mut c3 = [0u8; 32];
     for i in 0..32 {
-        c3[i] = m_bytes[i] ^ h[i];
+        c3[i] = m[i] ^ h[i];
     }
     let c3 = c3;
 
-    // DEBUG
     println!("FINISHED ENC_DEBUG FUNCTION\n");
 
     // Return c := (c1, c2, c3)
     (c1, c2, c3)
 }
 
-fn dec_debug(signature: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, Gt, [u8; 32])) -> [u8; 32] {
-    // DEBUG
+fn dec_debug(sig_: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, Gt, [u8; 32])) -> [u8; 32] {
     println!("STARTING DEC FUNCTION");
 
     // Parse c := (c1, c2, c3)
     // trivially done
 
-    // Compute r := c2 * e(c1, signature)^-1
-    let pairing_result = inner_types::pairing(&c1.to_affine(), &signature.as_raw_value().to_affine());
+    // Compute r := c2 * e(c1, sig_)^-1
+    let pairing_result = inner_types::pairing(&c1.to_affine(), &sig_.as_raw_value().to_affine());
     let neg_p_result = pairing_result.neg();
-    let r = neg_p_result.mul(&c2);
+    let r = neg_p_result.add(&c2);
 
     // Compute h := H_1(r)
     let r_bytes = r.to_bytes();
@@ -194,7 +185,6 @@ fn dec_debug(signature: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, 
     hasher.update(r_bytes);
     let h = hasher.finalize();
 
-    // DEBUG
     println!("DEC h: {:?}", h);
 
     // Compute m := c3 ^ h
@@ -207,72 +197,74 @@ fn dec_debug(signature: Signature<Bls12381G2Impl>, (c1, c2, c3): (G1Projective, 
     // Return m
     println!("Decrypted message: {:?}", m);
 
-    // DEBUG
     println!("FINISHED DEC FUNCTION");
     m
 }
+
+// ------------------------------------ TESTS --------------------------------------
 
 fn test_debug() {
     let seed: [u8; 32] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32];
     let sk = SecretKey::<Bls12381G2Impl>::from_be_bytes(&seed).expect("a valid secret key");
     let pk = PublicKey::from(&sk);
-    let msg = b"00000000-0000-0000-0000-00000000";
-    let sig = SecretKey::sign(&sk, SignatureSchemes::Basic, msg).expect("a valid signature");
+    let m_ = b"00000000-0000-0000-0000-00000000";
+    let sig = SecretKey::sign(&sk, SignatureSchemes::Basic, m_).expect("a valid signature");
 
-    match sig.verify(&pk, msg) {
-        Ok(()) => println!("Correct - Signature is valid"),
+    match sig.verify(&pk, m_) {
+        Ok(()) => println!("[test_debug]: Correct - Signature is valid"),
         Err(err) => println!("Error - Invalid signature: {:?}", err),
     }
 
-    // println!("sk: {:?}\n", sk);
-    // println!("pk: {:?}\n", pk);
-    // println!("msg: {:?}\n", msg);
-    // println!("sig: {:?}\n", sig);
+    let m = [2u8; 32];
 
-    let m_bytes = [1u8; 32];
+    println!("[test_debug]: sk: {:?}\n", sk);
+    println!("[test_debug]: pk: {:?}\n", pk);
+    println!("[test_debug]: m_: {:?}\n", m_);
+    println!("[test_debug]: sig: {:?}\n", sig);
+    println!("[test_debug]: m: {:?}\n", m);
 
-    let (c1, c2, c3) = enc_debug((&pk, msg), &m_bytes, &sig);
-    let ret_y_asbytes = dec_debug(sig, (c1, c2, c3));
+    let (c1, c2, c3) = enc_debug((&pk, m_), &m, &sig);
+    let ret_m = dec_debug(sig, (c1, c2, c3));
 
-    // assert that y_a as bytes and ret_y_asbytes are equal
-    assert_eq!(m_bytes, ret_y_asbytes);
+    // assert that m (as bytes) and ret_m are equal
+    assert_eq!(m, ret_m);
+    println!("[test_debug]: m == ret_m: {:?}\n\n", m == ret_m);
 }
 
-fn test1() {
+fn test_random() {
     let sk = SecretKey::<Bls12381G2Impl>::new();
     let pk = PublicKey::from(&sk);
     let msg = b"00000000-0000-0000-0000-000000000000";
 
     let sig = SecretKey::sign(&sk, SignatureSchemes::Basic, msg).expect("a valid signature");
-    let m_bytes = [1u8; 32];
+    let m = [1u8; 32];
 
-    let (c1, c2, c3) = enc((&pk, msg), &m_bytes);
-    let ret_m_bytes = dec(sig, (c1, c2, c3));
+    let (c1, c2, c3) = enc((&pk, msg), &m);
+    let ret_m = dec(sig, (c1, c2, c3));
 
-    assert_eq!(m_bytes, ret_m_bytes);
-    println!("m_bytes == ret_m_bytes: {:?}\n\n", m_bytes == ret_m_bytes);
+    assert_eq!(m, ret_m);
+    println!("[test_random]: m == ret_m: {:?}\n\n", m == ret_m);
 }
 
 fn test_pairing() {
-    let seed: [u8; 32] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32];
+    let seed: [u8; 32] = [1, 2, 3, 4, 5, 6, 7, 80, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32];
     let sk = SecretKey::<Bls12381G2Impl>::from_be_bytes(&seed).expect("a valid secret key");
     let pk = PublicKey::from(&sk);
     let msg = b"00000000-0000-0000-0000-000000000000";
     let sig = SecretKey::sign(&sk, SignatureSchemes::Basic, msg).expect("a valid signature");
 
     match sig.verify(&pk, msg) {
-        Ok(()) => println!("Correct - Signature is valid"),
-        Err(err) => println!("Error - Invalid signature: {:?}", err),
+        Ok(()) => println!("[test_pairing]: Correct - Signature is valid"),
+        Err(err) => println!("[test_pairing]: Error - Invalid signature: {:?}", err),
     }
+
     //BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_
     //BLS12381G1_XMD:SHA-256_SSWU_RO_
     let h = G2Projective::hash::<ExpandMsgXmd<sha2::Sha256>>(msg, b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_");
 
-    // p: &<Bls12381G2Impl as Pairing>::PublicKey::generator().to_affine()
     let pair1 = inner_types::pairing(&inner_types::G1Projective::GENERATOR.to_affine(), &sig.as_raw_value().to_affine());
     let pair2 = inner_types::pairing(&pk.0.to_affine(), &h.to_affine());
 
     assert_eq!(pair1, pair2);
-    // print success output that pairs equal
-    println!("pair1 == pair2: {:?}\n\n", pair1 == pair2);
+    println!("[test_pairing]: pair1 == pair2: {:?}\n\n", pair1 == pair2);
 }
