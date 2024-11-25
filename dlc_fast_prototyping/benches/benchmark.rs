@@ -1,12 +1,21 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use secp256k1_zkp::{global::SECP256K1, rand::thread_rng, Keypair, Message};
+use secp256k1_zkp::{
+    global::SECP256K1, rand::thread_rng, EcdsaAdaptorSignature, Keypair, SecretKey,
+};
 
 use k256::schnorr::{
     signature::{Signer, Verifier},
     SigningKey, VerifyingKey,
 };
+use schnorr_fun::{
+    adaptor::{Adaptor, EncryptedSign},
+    fun::{marker::*, nonce, Scalar},
+    Schnorr,
+};
+use sha2::Sha256;
 
+use rand::rngs::ThreadRng;
 use rand_core::{OsRng, RngCore};
 
 fn bench_secp256k1_zkp_sign(c: &mut Criterion) {
@@ -15,7 +24,7 @@ fn bench_secp256k1_zkp_sign(c: &mut Criterion) {
 
     let mut buf = [0u8; 32];
     thread_rng().fill_bytes(&mut buf);
-    let msg = Message::from_digest_slice(&buf).unwrap();
+    let msg = secp256k1_zkp::Message::from_digest_slice(&buf).unwrap();
 
     c.bench_function("secp256k1_zkp_sign", |b| {
         b.iter(|| {
@@ -29,7 +38,7 @@ fn bench_secp256k1_zkp_verify(c: &mut Criterion) {
     let keypair = Keypair::new(SECP256K1, &mut rng);
     let mut buf = [0u8; 32];
     thread_rng().fill_bytes(&mut buf);
-    let msg = Message::from_digest_slice(&buf).unwrap();
+    let msg = secp256k1_zkp::Message::from_digest_slice(&buf).unwrap();
     let sig = keypair.sign_schnorr(msg);
     let xpubkey = keypair.x_only_public_key().0;
 
@@ -70,10 +79,60 @@ fn bench_k256_verify(c: &mut Criterion) {
     });
 }
 
+fn bench_schnorr_fun_presign(c: &mut Criterion) {
+    // Use synthetic nonces
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+
+    // Generate your public/private key-pair
+    let signing_keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+
+    // Generate verification, decryption, encryption keys and message
+    let verification_key = signing_keypair.public_key();
+    let attestation = Scalar::random(&mut rand::thread_rng());
+    let anticipation_point = schnorr.encryption_key_for(&attestation);
+    let message = schnorr_fun::Message::<Public>::plain("text-bitcoin", b"send 1 BTC to Bob");
+
+    // Alice knows: signing_keypair, anticipation_point
+    // Bob knows: attestation, verification_key
+
+    // Alice creates an encrypted signature and sends it to Bob
+    c.bench_function("schnorr_fun_presign", |b| {
+        b.iter(|| {
+            let pre_signature =
+                black_box(schnorr.encrypted_sign(&signing_keypair, &anticipation_point, message));
+        })
+    });
+}
+
+fn bench_secp256k1_zkp_ecdsa_presign(c: &mut Criterion) {
+    let mut rng = thread_rng();
+    let signing_keypair = Keypair::new(SECP256K1, &mut rng);
+    let secret_key = signing_keypair.secret_key();
+    let attestation = SecretKey::new(&mut rand::thread_rng());
+    let anticipation_point = attestation.public_key(&SECP256K1);
+
+    let mut buf = [0u8; 32];
+    thread_rng().fill_bytes(&mut buf);
+    let msg = secp256k1_zkp::Message::from_digest_slice(&buf).unwrap();
+
+    c.bench_function("secp256k1_zkp_ecdsa_presign", |b| {
+        b.iter(|| {
+            let ecdsa_pre_signature = black_box(EcdsaAdaptorSignature::encrypt(
+                SECP256K1,
+                &msg,
+                &secret_key,
+                &anticipation_point,
+            ));
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
-    config = Criterion::default().measurement_time(std::time::Duration::new(10, 0)).sample_size(10000);
-    targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify
+    config = Criterion::default().measurement_time(std::time::Duration::new(15, 0)).sample_size(100000);
+    //targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify
+    targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
 }
 criterion_main!(benches);
 
