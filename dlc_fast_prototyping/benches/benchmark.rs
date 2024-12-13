@@ -79,6 +79,48 @@ fn bench_k256_verify(c: &mut Criterion) {
     });
 }
 
+fn bench_schnorr_fun_sign(c: &mut Criterion) {
+    // Use synthetic nonces
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen.clone());
+    // Generate your public/private key-pair
+    let keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+    // Sign a variable length message
+    let message = schnorr_fun::Message::<Public>::plain(
+        "the-times-of-london",
+        b"Chancellor on brink of second bailout for banks",
+    );
+    // Sign the message with our keypair
+    c.bench_function("schnorr_fun_sign", |b| {
+        b.iter(|| {
+            let _ = black_box(schnorr.sign(&keypair, message));
+        })
+    });
+}
+
+fn bench_schnorr_fun_verify(c: &mut Criterion) {
+    // Use synthetic nonces
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen.clone());
+    // Generate your public/private key-pair
+    let keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+    // Sign a variable length message
+    let message = schnorr_fun::Message::<Public>::plain(
+        "the-times-of-london",
+        b"Chancellor on brink of second bailout for banks",
+    );
+    // Sign the message with our keypair
+    let signature = schnorr.sign(&keypair, message);
+    // Get the verifier's key
+    let verification_key = keypair.public_key();
+
+    c.bench_function("schnorr_fun_verify", |b| {
+        b.iter(|| {
+            let _ = black_box(schnorr.verify(&verification_key, message, &signature));
+        })
+    });
+}
+
 fn bench_schnorr_fun_presign(c: &mut Criterion) {
     // Use synthetic nonces
     let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
@@ -130,9 +172,9 @@ fn bench_secp256k1_zkp_ecdsa_presign(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default().measurement_time(std::time::Duration::new(15, 0)).sample_size(100000);
-    //targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify
-    targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
+    config = Criterion::default().sample_size(10000);
+    targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
+    //targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
 }
 criterion_main!(benches);
 
