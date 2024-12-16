@@ -36,5 +36,7 @@ pub trait AdaptorSignatureScheme {
     ) -> Self::Attestation;
 }
 
+mod ecdsa_zkp_adaptor;
 mod schnorr_fun_adaptor;
+pub use ecdsa_zkp_adaptor::EcdsaZkpAdaptorSignatureScheme;
 pub use schnorr_fun_adaptor::SchnorrFunAdaptorSignatureScheme;
