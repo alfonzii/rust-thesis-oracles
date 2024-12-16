@@ -20,9 +20,9 @@ pub fn schnorrsig_compute_anticipation_point<C: Verification>(
     secp: &Secp256k1<C>,
     pub_key: &PublicKey,
     pub_nonce: &PublicKey,
-    digit_index: usize,
+    outcome: u32,
 ) -> Result<PublicKey, secp256k1_zkp::Error> {
-    let hash = create_schnorr_hash(digit_index, pub_nonce, pub_key);
+    let hash = create_schnorr_hash(outcome, pub_nonce, pub_key);
     let scalar = Scalar::from_be_bytes(hash).unwrap();
     let tweaked = pub_key.mul_tweak(secp, &scalar)?;
     Ok(pub_nonce.combine(&tweaked)?)
@@ -33,10 +33,10 @@ pub fn schnorrsig_compute_oracle_attestation<C: Verification + Signing>(
     secp: &Secp256k1<C>,
     priv_key: &SecretKey,
     priv_nonce: &SecretKey,
-    digit_index: usize,
+    outcome: u32,
 ) -> Result<SecretKey, secp256k1_zkp::Error> {
     let hash = create_schnorr_hash(
-        digit_index,
+        outcome,
         &PublicKey::from_secret_key(secp, priv_nonce),
         &PublicKey::from_secret_key(secp, priv_key),
     );
@@ -46,10 +46,10 @@ pub fn schnorrsig_compute_oracle_attestation<C: Verification + Signing>(
 }
 
 /// Create a BIP340 hash for the given digit index (which is 1), nonce and public key.
-fn create_schnorr_hash(digit_index: usize, pub_nonce: &PublicKey, pub_key: &PublicKey) -> [u8; 32] {
+fn create_schnorr_hash(outcome: u32, pub_nonce: &PublicKey, pub_key: &PublicKey) -> [u8; 32] {
     let mut buf = Vec::<u8>::new();
     buf.extend(pub_nonce.serialize());
     buf.extend(pub_key.serialize());
-    buf.push(digit_index as u8);
+    buf.push(outcome as u8);
     BIP340Hash::hash(&buf).to_byte_array()
 }

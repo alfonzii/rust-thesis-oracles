@@ -11,5 +11,5 @@ pub trait Oracle {
     fn get_attestation(&self, event_id: u32) -> (Self::Outcome, Self::Attestation);
 }
 
-mod impl_oracle_local;
-pub use impl_oracle_local::LocalOracle;
+mod rand_int_oracle;
+pub use rand_int_oracle::RandIntOracle;
