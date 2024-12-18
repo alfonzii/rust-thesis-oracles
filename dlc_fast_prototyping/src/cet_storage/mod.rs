@@ -12,4 +12,5 @@ pub trait CetStorage {
     fn get_adaptors() -> Vec<Self::AdaptorSignature>;
     fn verify_put_cp_adaptors(counterparty_adaptors: Vec<Self::AdaptorSignature>) -> bool;
     fn get(outcome: &Self::Outcome) -> (Self::CET, Self::Signature);
+    //fn finalize (outcome, attestation) -> Self::btc_tx;
 }

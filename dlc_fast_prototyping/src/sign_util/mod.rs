@@ -4,7 +4,7 @@ pub trait SignUtil {
     type Outcome;
     type AnticipationPoint;
 
-    fn create_atp_point(
+    fn create_anticipation_point(
         pub_key: &Self::PublicKey,
         pub_nonce: &Self::PubNonce,
         outcome: &Self::Outcome,
