@@ -18,6 +18,8 @@ use sha2::Sha256;
 use rand::rngs::ThreadRng;
 use rand_core::{OsRng, RngCore};
 
+// -------------------------------------------  Signing and verification -------------------------------------------
+
 fn bench_secp256k1_zkp_sign(c: &mut Criterion) {
     let mut rng = thread_rng();
     let keypair = Keypair::new(SECP256K1, &mut rng);
@@ -121,6 +123,8 @@ fn bench_schnorr_fun_verify(c: &mut Criterion) {
     });
 }
 
+// ------------------------------------------- Adaptor signature computation -------------------------------------------
+
 fn bench_schnorr_fun_presign(c: &mut Criterion) {
     // Use synthetic nonces
     let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
@@ -170,11 +174,129 @@ fn bench_secp256k1_zkp_ecdsa_presign(c: &mut Criterion) {
     });
 }
 
+// -------------------------------------------  Key serialization and deserialization -------------------------------------------
+
+fn bench_secp256k1_zkp_key_serialize(c: &mut Criterion) {
+    let keypair = Keypair::new(SECP256K1, &mut thread_rng());
+    let pubkey = keypair.public_key();
+    c.bench_function("secp256k1_zkp_key_serialize", |b| {
+        b.iter(|| {
+            let _ = black_box(pubkey.serialize());
+        })
+    });
+}
+
+fn bench_secp256k1_zkp_key_deserialize(c: &mut Criterion) {
+    let keypair = Keypair::new(SECP256K1, &mut thread_rng());
+    let serialized = keypair.public_key().serialize();
+    c.bench_function("secp256k1_zkp_key_deserialize", |b| {
+        b.iter(|| {
+            black_box(secp256k1_zkp::PublicKey::from_slice(&serialized).unwrap());
+        })
+    });
+}
+
+fn bench_k256_key_serialize(c: &mut Criterion) {
+    let signing_key = k256::schnorr::SigningKey::random(&mut OsRng);
+    let verifying_key = signing_key.verifying_key();
+    c.bench_function("k256_key_serialize", |b| {
+        b.iter(|| {
+            black_box(verifying_key.to_bytes());
+        })
+    });
+}
+
+fn bench_k256_key_deserialize(c: &mut Criterion) {
+    let signing_key = k256::schnorr::SigningKey::random(&mut OsRng);
+    let verifying_key_bytes = signing_key.verifying_key().to_bytes();
+    c.bench_function("k256_key_deserialize", |b| {
+        b.iter(|| {
+            black_box(k256::schnorr::VerifyingKey::from_bytes(&verifying_key_bytes).unwrap());
+        })
+    });
+}
+
+fn bench_schnorr_fun_key_serialize(c: &mut Criterion) {
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+    let kp = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+    let pubkey = kp.public_key();
+    c.bench_function("schnorr_fun_key_serialize", |b| {
+        b.iter(|| {
+            black_box(pubkey.to_bytes());
+        })
+    });
+}
+
+fn bench_schnorr_fun_key_deserialize(c: &mut Criterion) {
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+    let kp = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+    let serialized = kp.public_key().to_bytes();
+    c.bench_function("schnorr_fun_key_deserialize", |b| {
+        b.iter(|| {
+            black_box(
+                schnorr_fun::fun::Point::<_, schnorr_fun::fun::marker::NonZero>::from_bytes(
+                    serialized,
+                )
+                .unwrap(),
+            );
+        })
+    });
+}
+
+// -------------------------------------------  Adaptor signature cloning -------------------------------------------
+
+fn bench_ecdsa_adaptor_signature_clone(c: &mut Criterion) {
+    let mut rng = thread_rng();
+    let signing_keypair = Keypair::new(SECP256K1, &mut rng);
+    let secret_key = signing_keypair.secret_key();
+    let attestation = SecretKey::new(&mut rand::thread_rng());
+    let anticipation_point = attestation.public_key(&SECP256K1);
+
+    let mut buf = [0u8; 32];
+    thread_rng().fill_bytes(&mut buf);
+    let msg = secp256k1_zkp::Message::from_digest_slice(&buf).unwrap();
+
+    let ecdsa_adaptor =
+        EcdsaAdaptorSignature::encrypt(SECP256K1, &msg, &secret_key, &anticipation_point);
+
+    c.bench_function("ecdsa_adaptor_signature_clone", |b| {
+        b.iter(|| {
+            let _ = black_box(ecdsa_adaptor.clone());
+        })
+    });
+}
+
+fn bench_schnorr_adaptor_signature_clone(c: &mut Criterion) {
+    // Use synthetic nonces
+    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
+    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+
+    // Generate your public/private key-pair
+    let signing_keypair = schnorr.new_keypair(Scalar::random(&mut rand::thread_rng()));
+
+    // Generate verification, decryption, encryption keys and message
+    let attestation = Scalar::random(&mut rand::thread_rng());
+    let anticipation_point = schnorr.encryption_key_for(&attestation);
+    let message = schnorr_fun::Message::<Public>::plain("text-bitcoin", b"send 1 BTC to Bob");
+
+    let schnorr_adaptor = schnorr.encrypted_sign(&signing_keypair, &anticipation_point, message);
+
+    c.bench_function("schnorr_adaptor_signature_clone", |b| {
+        b.iter(|| {
+            let _ = black_box(schnorr_adaptor.clone());
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10000);
-    targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
-    //targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
+    // targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
+    // targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
+    // targets = bench_secp256k1_zkp_key_serialize, bench_secp256k1_zkp_key_deserialize, bench_k256_key_serialize, bench_k256_key_deserialize, bench_schnorr_fun_key_serialize, bench_schnorr_fun_key_deserialize
+    targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
 }
 criterion_main!(benches);
 
