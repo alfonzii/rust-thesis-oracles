@@ -1,10 +1,9 @@
 // main.rs
 
 use adaptor_signatures::AdaptorSignatureScheme;
-use rand::rngs::ThreadRng;
 use schnorr_fun::{self, Message, Schnorr};
 use secp256k1_zkp::SECP256K1;
-use secp256kfun::{marker::Public, nonce, Point};
+use secp256kfun::{marker::Public, Point};
 use secp_utils::schnorrsig_compute_anticipation_point;
 
 use oracle::Oracle;
@@ -15,12 +14,11 @@ mod oracle;
 mod secp_utils;
 
 fn main() {
-    ecdsa_zkp_demo();
+    schnorr_fun_demo();
 }
 
 fn schnorr_fun_demo() {
-    let nonce_gen = nonce::Synthetic::<Sha256, nonce::GlobalRng<ThreadRng>>::default();
-    let schnorr = Schnorr::<Sha256, _>::new(nonce_gen);
+    let schnorr = Schnorr::<Sha256>::verify_only();
 
     let oracle = oracle::RandIntOracle::new();
     let public_key = oracle.get_public_key()[0];
