@@ -32,4 +32,4 @@ pub trait AdaptorSignatureScheme {
 }
 
 mod ecdsa_zkp_adaptor;
-pub use ecdsa_zkp_adaptor::EcdsaZkpAdaptorSignatureScheme;
+pub use ecdsa_zkp_adaptor::EcdsaAdaptorSignatureScheme;
