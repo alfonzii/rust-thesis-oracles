@@ -1,70 +1,69 @@
 use secp256k1_zkp::{
     global::SECP256K1,
     rand::{thread_rng, Rng},
-    Keypair, PublicKey, SecretKey,
+    Keypair,
 };
 
+use crate::common::{types, Outcome, OutcomeU32};
+use crate::crypto_utils::CryptoUtils;
 use crate::oracle;
-use crate::secp_utils; // Ensure the correct path to the oracle module
+use core::marker::PhantomData;
 
-pub struct RandIntOracle {
+use super::{Oracle, OracleAttestation};
+
+pub struct RandIntOracle<CU: CryptoUtils> {
     nonces: Keypair,
     keys: Keypair,
-    outcome: u32, // Simple u32 value
+    outcome: types::OutcomeU32,
+    _phantom: PhantomData<CU>,
 }
 
-impl RandIntOracle {
+impl<CU: CryptoUtils> RandIntOracle<CU> {
     pub fn new() -> Self {
         let nonces = Keypair::new(SECP256K1, &mut thread_rng());
         let keys = Keypair::new(SECP256K1, &mut thread_rng());
 
         let mut rng = thread_rng();
-        let outcome: u32 = rng.gen();
+        let outcome = OutcomeU32::from(rng.gen::<u32>());
 
         Self {
             nonces,
             keys,
             outcome,
+            _phantom: PhantomData,
         }
     }
 
     pub fn get_outcome(&self) -> u32 {
-        self.outcome
-    }
-
-    fn compute_attestation(&self) -> SecretKey {
-        let priv_nonce = self.nonces.secret_key();
-        let priv_key = self.keys.secret_key();
-
-        secp_utils::schnorrsig_compute_oracle_attestation(
-            &SECP256K1,
-            &priv_key,
-            &priv_nonce,
-            self.outcome,
-        )
-        .unwrap()
+        self.outcome.get_value()
     }
 }
 
-// Implement the Oracle trait for RandIntOracle
-impl oracle::Oracle for RandIntOracle {
-    type PublicKey = PublicKey;
-    type PubNonce = PublicKey;
-    type Outcome = u32;
-    type Attestation = SecretKey;
-
-    fn get_public_key(&self) -> Vec<Self::PublicKey> {
-        vec![self.keys.public_key()]
+impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
+    fn get_public_key(&self) -> types::PublicKey {
+        self.keys.public_key()
     }
 
-    fn get_announcement(&self, _event_id: u32) -> (Vec<Self::PublicKey>, Vec<Self::PubNonce>, u32) {
-        let pub_keys = vec![self.keys.public_key()];
-        let pub_nonces = vec![self.nonces.public_key()];
-        let attestation_time = 0; // Placeholder for attestation time
-        (pub_keys, pub_nonces, attestation_time)
+    fn get_event_announcement(
+        &self,
+        event_id: u32,
+    ) -> oracle::OracleAnnouncement<types::PublicKey, types::PublicNonce> {
+        oracle::OracleAnnouncement {
+            public_key: self.keys.public_key(),
+            public_nonces: vec![self.nonces.public_key()],
+            next_attestation_time: 0,
+        }
     }
 
-    fn get_attestation(&self, _event_id: u32) -> (Self::Outcome, Self::Attestation) {
-        (self.outcome, self.compute_attestation())
+    fn get_event_attestation(&self, event_id: u32) -> OracleAttestation<types::Attestation> {
+        oracle::OracleAttestation {
+            outcome: self.outcome,
+            attestation: CU::compute_attestation(
+                &self.keys.secret_key(),
+                &self.nonces.secret_key(),
+                &self.outcome,
+            )
+            .expect("Error computing event attestation"),
+        }
     }
 }

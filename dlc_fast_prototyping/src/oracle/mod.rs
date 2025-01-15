@@ -1,14 +1,25 @@
 // src/oracle/mod.rs
 
-pub trait Oracle {
-    type PublicKey; // Point
-    type PubNonce; // Point
-    type Outcome;
-    type Attestation; // Scalar
+use crate::common::{types, OutcomeU32};
 
-    fn get_public_key(&self) -> Vec<Self::PublicKey>; // vector; just so we can test multipub oracle later. in normal scenario we use just one pubkey (first element)
-    fn get_announcement(&self, event_id: u32) -> (Vec<Self::PublicKey>, Vec<Self::PubNonce>, u32); // u32 in result stands for closest following attestation time
-    fn get_attestation(&self, event_id: u32) -> (Self::Outcome, Self::Attestation);
+pub trait Oracle {
+    fn get_public_key(&self) -> types::PublicKey;
+    fn get_event_announcement(
+        &self,
+        event_id: u32,
+    ) -> OracleAnnouncement<types::PublicKey, types::PublicNonce>;
+    fn get_event_attestation(&self, event_id: u32) -> OracleAttestation<types::Attestation>;
+}
+
+pub struct OracleAnnouncement<PK, PN> {
+    pub public_key: PK,
+    pub public_nonces: Vec<PN>,
+    pub next_attestation_time: u32, // unix timestamp
+}
+
+pub struct OracleAttestation<A> {
+    pub outcome: OutcomeU32, // INFO: Oracle will always return outcome in an integer form. We call for it just once, so if we need, we can convert it for negligible perf cost
+    pub attestation: A, // TODO: asi z toho urobit tiez pole, lebo ich rust-dlc algoritmus pouziva prave "pocetbitov" atestacii
 }
 
 mod rand_int_oracle;
