@@ -1,138 +1,186 @@
 // main.rs
 
-use adaptor_signatures::AdaptorSignatureScheme;
-use schnorr_fun::{self, Message, Schnorr};
-use secp256k1_zkp::SECP256K1;
-use secp256kfun::{marker::Public, Point};
-use secp_utils::schnorrsig_compute_anticipation_point;
+use std::sync::Arc;
 
-use oracle::Oracle;
+use adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
+use common::{types, FinalizedTx};
+use crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
+use dlc_controller::{very_simple_controller::VerySimpleController, DlcController};
+use secp256k1_zkp::{Message, Secp256k1};
+
 use sha2::{Digest, Sha256};
 
-mod adaptor_signatures;
+mod adaptor_signature_scheme;
+mod common;
+mod crypto_utils;
+mod dlc_computation;
+mod dlc_controller;
+mod dlc_storage;
 mod oracle;
-mod secp_utils;
 
 fn main() {
-    schnorr_fun_demo();
+    // Create oracle
+    let oracle = Arc::new(oracle::RandIntOracle::<SimpleCryptoUtils>::new());
+    println!("Oracle outcome: {:?}", oracle.get_outcome() % 256);
+
+    // Create controllers
+    let mut controller_alice =
+        VerySimpleController::<EcdsaAdaptorSignatureScheme, _>::new("Alice", Arc::clone(&oracle));
+    let mut controller_bob =
+        VerySimpleController::<EcdsaAdaptorSignatureScheme, _>::new("Bob", Arc::clone(&oracle));
+
+    // Fund the multisig address
+    let multisig = types::MultisigFundAddress::new(
+        controller_alice.share_verification_key(),
+        controller_bob.share_verification_key(),
+    );
+
+    // Load input files (does nothing now)
+    controller_alice
+        .load_input("some/path/to/input/file")
+        .unwrap();
+    controller_bob
+        .load_input("some/path/to/input/file")
+        .unwrap();
+
+    // Initialize storage (heavy lifting done here)
+    controller_alice.init_storage().unwrap();
+    controller_bob.init_storage().unwrap();
+
+    // Share verification keys and adaptors
+    controller_alice.save_cp_verification_key(controller_bob.share_verification_key());
+    controller_alice.save_cp_adaptors(controller_bob.share_adaptors());
+    controller_bob.save_cp_verification_key(controller_alice.share_verification_key());
+    controller_bob.save_cp_adaptors(controller_alice.share_adaptors());
+
+    // Verify counterparty adaptors
+    assert!(
+        controller_alice.verify_cp_adaptors(),
+        "Counterparty adaptors are not valid."
+    );
+    assert!(
+        controller_bob.verify_cp_adaptors(),
+        "Counterparty adaptors are not valid."
+    );
+
+    // Update counterparty adaptors
+    controller_alice.update_cp_adaptors().unwrap();
+    controller_bob.update_cp_adaptors().unwrap();
+
+    // Wait for oracle attestation and finalize if positive
+    if controller_alice.wait_attestation() {
+        let finalized_tx = controller_alice.finalize_tx();
+        assert!(finalized_tx_valid(&finalized_tx, &multisig));
+    }
+
+    if controller_bob.wait_attestation() {
+        let finalized_tx = controller_bob.finalize_tx();
+        assert!(finalized_tx_valid(&finalized_tx, &multisig));
+    }
 }
 
-fn schnorr_fun_demo() {
-    let schnorr = Schnorr::<Sha256>::verify_only();
+fn finalized_tx_valid(
+    finalized_tx: &FinalizedTx<secp256k1_zkp::ecdsa::Signature>,
+    multisig: &types::MultisigFundAddress,
+) -> bool {
+    let secp = Secp256k1::verification_only();
 
-    let oracle = oracle::RandIntOracle::new();
-    let public_key = oracle.get_public_key()[0];
-    let public_nonce = oracle.get_announcement(0).1[0];
-    let outcome = oracle.get_outcome();
-    let attestation = oracle.get_attestation(0).1;
-
-    println!("[Oracle]: Public key: {:?}", public_key);
-    println!("[Oracle]: Public nonce: {:?}", public_nonce);
-
-    let schnorr_scheme = adaptor_signatures::SchnorrFunAdaptorSignatureScheme::new();
-    let keypair = schnorr_fun::fun::KeyPair::<schnorr_fun::fun::marker::EvenY>::new(
-        schnorr_fun::fun::Scalar::random(&mut rand::thread_rng()),
-    );
-    let message = String::from("send 1 BTC to Bob");
-
-    // Make a bet
-    println!(
-        "[Alice]: I, Alice, will send 1 BTC to Bob, if the outcome of oracle is {:?}",
-        outcome
-    );
-
-    let msg = Message::<Public>::plain("text-bitcoin", message.as_bytes());
-
-    let atp_point =
-        schnorrsig_compute_anticipation_point(SECP256K1, &public_key, &public_nonce, outcome)
-            .unwrap();
-
-    let atp_point = Point::from_bytes(atp_point.serialize()).unwrap();
-
-    let pre_signature = schnorr_scheme.pre_sign(&keypair, &message, &atp_point);
-    let verif_key = keypair.public_key();
-
-    // Share pre_signature and verif_key with the Bob so he can verify the adaptor signature of message/tx:
-    // "send 1 BTC to Bob"
-    assert_eq!(
-        schnorr_scheme.pre_verify(&verif_key, &message, &atp_point, &pre_signature),
-        true
-    );
-
-    println!(
-        "[Bob]: Alice has sent me adaptor signature: {:?}",
-        pre_signature
-    );
-
-    // (Simulate) wait for the attestation to be revealed
-    println!("\n\nWaiting for oracle to attest\n\n");
-    std::thread::sleep(std::time::Duration::from_secs(1));
-
-    println!("Outcome: {:?}", outcome);
-    println!("Attestation: {:?}", attestation);
-
-    let attestation = schnorr_fun::fun::Scalar::from_bytes(attestation.secret_bytes()).unwrap();
-
-    // Adapt the pre_signature to get the final signature
-    let signature = schnorr_scheme.adapt(&pre_signature, &attestation);
-
-    assert!(schnorr.verify(&keypair.public_key(), msg, &signature));
-    println!("The adapted signature correctly signs the message.");
-}
-
-fn ecdsa_zkp_demo() {
-    let oracle = oracle::RandIntOracle::new();
-    let public_key = oracle.get_public_key()[0];
-    let public_nonce = oracle.get_announcement(0).1[0];
-    let outcome = oracle.get_outcome();
-    let attestation = oracle.get_attestation(0).1;
-
-    println!("[Oracle]: Public key: {:?}", public_key);
-    println!("[Oracle]: Public nonce: {:?}", public_nonce);
-
-    let ecdsa_scheme = adaptor_signatures::EcdsaZkpAdaptorSignatureScheme::new();
-    let (signing_key, verification_key) = SECP256K1.generate_keypair(&mut rand::thread_rng());
-
-    let message = String::from("send 1 BTC to Bob");
-    let hash = Sha256::digest(message.as_bytes());
+    let hash = Sha256::digest(finalized_tx.payload.as_bytes());
     let hashed_message: [u8; 32] = hash.into();
+    let msg = match Message::from_digest_slice(&hashed_message) {
+        Ok(msg) => msg,
+        Err(_) => return false,
+    };
 
-    // Make a bet
-    println!(
-        "[Alice]: I, Alice, will send 1 BTC to Bob, if the outcome of oracle is {:?}",
-        outcome
-    );
+    if secp
+        .verify_ecdsa(&msg, &finalized_tx.signature1, &multisig.public_key1)
+        .is_err()
+    {
+        return false;
+    }
+    if secp
+        .verify_ecdsa(&msg, &finalized_tx.signature2, &multisig.public_key2)
+        .is_err()
+    {
+        return false;
+    }
+    println!("Transaction \"{}\" is valid.", finalized_tx.payload);
+    true
+}
 
-    let atp_point =
-        schnorrsig_compute_anticipation_point(SECP256K1, &public_key, &public_nonce, outcome)
-            .unwrap();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::thread_rng;
+    use secp256k1_zkp::{Message, Secp256k1};
+    use sha2::{Digest, Sha256};
 
-    let msg = secp256k1_zkp::Message::from_digest_slice(&hashed_message).unwrap();
-    let pre_signature = ecdsa_scheme.pre_sign(&signing_key, &msg, &atp_point);
+    #[test]
+    fn test_ecdsa_sign() {
+        let secp = Secp256k1::new();
+        let (secret_key, public_key) = secp.generate_keypair(&mut thread_rng());
 
-    // Share pre_signature and verif_key with the Bob so he can verify the adaptor signature of message/tx:
-    // "send 1 BTC to Bob"
-    assert_eq!(
-        ecdsa_scheme.pre_verify(&verification_key, &msg, &atp_point, &pre_signature),
-        true
-    );
+        let hash = Sha256::digest("Alice gets 43 sats and Bob 120 sats".as_bytes());
+        let hashed_message: [u8; 32] = hash.into();
+        let msg = Message::from_digest_slice(&hashed_message).unwrap();
 
-    println!(
-        "[Bob]: Alice has sent me adaptor signature: {:?}",
-        pre_signature
-    );
+        let sig = secp.sign_ecdsa(&msg, &secret_key);
 
-    // (Simulate) wait for the attestation to be revealed
-    println!("\n\nWaiting for oracle to attest\n\n");
-    std::thread::sleep(std::time::Duration::from_secs(1));
+        assert!(secp.verify_ecdsa(&msg, &sig, &public_key).is_ok());
+        println!("ECDSA test passed.");
+    }
 
-    println!("Outcome: {:?}", outcome);
-    println!("Attestation: {:?}", attestation);
+    #[test]
+    fn test_ecdsa_adaptor_sign() {
+        use common::types::OutcomeU32;
+        use crypto_utils::CryptoUtils;
 
-    let signature = ecdsa_scheme.adapt(&pre_signature, &attestation);
+        let secp = Secp256k1::new();
+        let mut rng = thread_rng();
 
-    assert!(SECP256K1
-        .verify_ecdsa(&msg, &signature, &verification_key)
-        .is_ok());
-    println!("The adapted signature correctly signs the message.");
+        // Generate signer keypair
+        let (signer_sk, signer_pk) = secp.generate_keypair(&mut rng);
+        // Generate nonce keypair (for anticipation point / attestation)
+        let (nonce_sk, nonce_pk) = secp.generate_keypair(&mut rng);
+
+        // Create message
+        let message_str = "Adaptor signature test";
+        let hash = Sha256::digest(message_str.as_bytes());
+        let msg = Message::from_digest_slice(&hash).unwrap();
+
+        // Create outcome
+        let outcome_value = 42u32;
+        let outcome = OutcomeU32::from(outcome_value);
+
+        // Compute anticipation point using SimpleCryptoUtils
+        let anticipation_point =
+            SimpleCryptoUtils::compute_anticipation_point(&signer_pk, &nonce_pk, &outcome)
+                .expect("Failed to compute anticipation point");
+
+        // Create adaptor signature and verify pre-adaptation
+        let adaptor_sig =
+            EcdsaAdaptorSignatureScheme::pre_sign(&signer_sk, &msg, &anticipation_point);
+        assert!(
+            EcdsaAdaptorSignatureScheme::pre_verify(
+                &signer_pk,
+                &msg,
+                &anticipation_point,
+                &adaptor_sig
+            ),
+            "Pre-verification failed"
+        );
+
+        // Compute attestation using SimpleCryptoUtils (using nonce_sk as private nonce)
+        let attestation = SimpleCryptoUtils::compute_attestation(&signer_sk, &nonce_sk, &outcome)
+            .expect("Failed to compute attestation");
+
+        // Adapt the adaptor signature using computed attestation and verify signature
+        let adapted_sig = EcdsaAdaptorSignatureScheme::adapt(&adaptor_sig, &attestation);
+        assert!(
+            secp.verify_ecdsa(&msg, &adapted_sig, &signer_pk).is_ok(),
+            "Adapted signature verification failed"
+        );
+
+        println!("ECDSA adaptor signature test passed.");
+    }
 }

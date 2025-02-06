@@ -19,7 +19,7 @@ pub type PrivateNonce = SecretKey;
 
 // Other
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)
-pub type ContractDescriptor<O: Outcome> = Vec<(O, u32)>;
+pub type ContractDescriptor<O: Outcome> = Vec<(O, u32)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
 
 /// The final Bitcoin transaction or any other on-chain transaction type
 /// that will be broadcasted after finalization.
@@ -41,8 +41,17 @@ impl<Sig> FinalizedTx<Sig> {
 }
 
 pub struct MultisigFundAddress {
-    public_key1: PublicKey,
-    public_key2: PublicKey,
+    pub public_key1: PublicKey,
+    pub public_key2: PublicKey,
+}
+
+impl MultisigFundAddress {
+    pub fn new(public_key1: PublicKey, public_key2: PublicKey) -> Self {
+        Self {
+            public_key1,
+            public_key2,
+        }
+    }
 }
 
 pub trait Outcome {

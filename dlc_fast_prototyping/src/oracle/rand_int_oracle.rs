@@ -24,7 +24,8 @@ impl<CU: CryptoUtils> RandIntOracle<CU> {
         let keys = Keypair::new(SECP256K1, &mut thread_rng());
 
         let mut rng = thread_rng();
-        let outcome = OutcomeU32::from(rng.gen::<u32>());
+        let outcome = OutcomeU32::from(rng.gen::<u32>() % 256); // musi tu byt modulo, aby pocital atestacie len z 0-255.
+                                                                // a nasledne aby ja som potom vedel adaptovat spravne adaptor-signature
 
         Self {
             nonces,
@@ -55,7 +56,7 @@ impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
         }
     }
 
-    fn get_event_attestation(&self, event_id: u32) -> OracleAttestation<types::Attestation> {
+    fn get_event_attestation(&self, event_id: u32) -> OracleAttestation {
         oracle::OracleAttestation {
             outcome: self.outcome,
             attestation: CU::compute_attestation(

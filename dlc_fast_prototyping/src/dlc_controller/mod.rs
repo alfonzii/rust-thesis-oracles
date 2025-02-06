@@ -1,28 +1,42 @@
 // src/dlc_controller/mod.rs
 
-pub trait DlcController {
-    type ContractConfigInput;
-    type Oracle;
-    type Attestation;
-    type Transaction;
-    type AdaptorSignature;
+use secp256k1_zkp::PublicKey;
 
-    fn parse_contract_input(
-        &self,
-        contract: &Self::ContractConfigInput,
-    ) -> types::ContractDescriptor<Self::Outcome>;
+use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types, oracle::Oracle};
+use std::{io::Error, sync::Arc};
 
-    //fn init storage (self)
+pub trait DlcController<ASigS: AdaptorSignatureScheme, O: Oracle> {
+    // type ContractConfigInput;
+    // type Oracle;
+    // type Attestation;
+    // type Transaction;
+    // type AdaptorSignature;
 
-    //fn share_adaptors(self) -> vec adaptor signature
+    fn new(name: &str, oracle: Arc<O>) -> Self;
 
-    //fn wait_cp_adaptors(self) -> vec adaptorsignature
+    fn load_input(&self, input_path: &str) -> Result<(), Error>;
 
-    //fn wait_attestation(self) -> OracleAttestation<outcome, attestaion>
+    fn init_storage(&mut self) -> Result<(), Error>;
 
-    //fn finalize_tx(self, outcome:Outcome, attestation: Atestation) -> Transaction
+    // TODO: Share and save should look differently, but for now, we will make them as they are just for the sake of simplicity
+    fn share_verification_key(&self) -> PublicKey;
+    fn share_adaptors(&self) -> Vec<ASigS::AdaptorSignature>;
+    fn save_cp_verification_key(&mut self, cp_verification_key: PublicKey) -> ();
+    fn save_cp_adaptors(&mut self, cp_adaptors: Vec<ASigS::AdaptorSignature>) -> ();
 
-    // fn broadcast_to_blockchain(self, FinelizedTx)
+    fn verify_cp_adaptors(&self) -> bool;
+
+    fn update_cp_adaptors(&mut self) -> Result<(), Error>;
+
+    fn wait_attestation(&mut self) -> bool; // Returns if outcome of event is positive for my perspective of DLC
+
+    fn finalize_tx(&self) -> types::FinalizedTx<ASigS::Signature>;
+
+    // fn broadcast_to_blockchain(self) -> Result<(), Error>;
 }
 
 // just some commented skeleton. Going to be changed soon.
+
+// is in Mac. might take a look
+
+pub mod very_simple_controller;

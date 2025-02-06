@@ -6,7 +6,7 @@ use crate::{
     crypto_utils::CryptoUtils,
     dlc_storage::StorageElement,
 };
-
+// TODO: mozno ho bude treba spravit stavove kvoli precomputation atd. tym padom vlastne do compute_..._vec nebude treba davat vector pubnoncov v pripade precomputation optimalizacie, ale staci len raz, na zaciatku na vytvorenie precomp_points
 pub trait DlcComputation<ASigS, CU, O>
 where
     ASigS: AdaptorSignatureScheme,
@@ -16,9 +16,10 @@ where
     fn compute_storage_elements_vec(
         // TODO: dat sem mozno niekde nb_outcomes, lebo pri pushovani do vec storageelement budeme realokovat a my vlastne tak nejak tusime, aky velky ma byy ten vektor. bud velkosti Buff ktory vracia parser, alebo velkosti "nb_outcomes"
         contr_desc: &types::ContractDescriptor<O>,
+        total_collateral: u32,
         sign_key: &types::SigningKey,
         oracle_pub_key: &types::PublicKey,
-        oracle_pub_nonces_vec: &Vec<types::PublicNonce>,
+        oracle_pub_nonce: &types::PublicNonce,
     ) -> Vec<StorageElement<ASigS>>;
 
     fn verify_cp_adaptors(
@@ -30,3 +31,5 @@ where
 
 //fn get_unified_outcome(outcome: types::Outcome) -> Storage::UniOutcome;
 // TODO: tieto unified outcome gettery budu potom pravdepodobne v Parseri pretoze ten to uz sam nejak unifikuje/aggreguje, takze dava zmysel, zeby si to rovno niekde ulozil a nasledne sa ho mozeme dotazovat
+
+pub mod simple_dlc_computation;
