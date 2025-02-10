@@ -1,7 +1,9 @@
 // src/adaptor_signature_scheme/ecdsa_zkp_adaptor.rs
-use crate::adaptor_signature_scheme::AdaptorSignatureScheme;
+use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types};
 
-use secp256k1_zkp::{rand::thread_rng, EcdsaAdaptorSignature, SECP256K1};
+use secp256k1_zkp::{
+    rand::thread_rng, EcdsaAdaptorSignature, Message, PublicKey, SecretKey, SECP256K1,
+};
 
 pub struct EcdsaAdaptorSignatureScheme;
 
@@ -12,9 +14,9 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
     type Signature = secp256k1_zkp::ecdsa::Signature;
 
     fn pre_sign(
-        signing_key: &secp256k1_zkp::SecretKey,
-        message: &secp256k1_zkp::Message,
-        anticipation_point: &secp256k1_zkp::PublicKey,
+        signing_key: &SecretKey,
+        message: &Message,
+        anticipation_point: &PublicKey,
     ) -> Self::AdaptorSignature {
         let mut rng = thread_rng();
         EcdsaAdaptorSignature::encrypt_with_rng(
@@ -27,9 +29,9 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
     }
 
     fn pre_verify(
-        verification_key: &secp256k1_zkp::PublicKey,
-        message: &secp256k1_zkp::Message,
-        anticipation_point: &secp256k1_zkp::PublicKey,
+        verification_key: &PublicKey,
+        message: &Message,
+        anticipation_point: &PublicKey,
         adaptor_signature: &Self::AdaptorSignature,
     ) -> bool {
         adaptor_signature
@@ -39,7 +41,7 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
 
     fn adapt(
         adaptor_signature: &Self::AdaptorSignature,
-        attestation: &secp256k1_zkp::SecretKey,
+        attestation: &SecretKey,
     ) -> Self::Signature {
         adaptor_signature
             .decrypt(attestation)
@@ -49,8 +51,8 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
     fn extract(
         signature: &Self::Signature,
         adaptor_signature: &Self::AdaptorSignature,
-        anticipation_point: &secp256k1_zkp::PublicKey,
-    ) -> secp256k1_zkp::SecretKey {
+        anticipation_point: &PublicKey,
+    ) -> types::Attestation {
         adaptor_signature
             .recover(SECP256K1, signature, anticipation_point)
             .expect("Failed to recover attestation")

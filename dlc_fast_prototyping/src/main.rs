@@ -110,6 +110,8 @@ fn finalized_tx_valid(
 
 #[cfg(test)]
 mod tests {
+    use crate::adaptor_signature_scheme::AdaptorSignatureScheme;
+
     use super::*;
     use rand::thread_rng;
     use secp256k1_zkp::{Message, Secp256k1};

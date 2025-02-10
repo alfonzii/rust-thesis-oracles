@@ -6,12 +6,6 @@ use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types, ora
 use std::{io::Error, sync::Arc};
 
 pub trait DlcController<ASigS: AdaptorSignatureScheme, O: Oracle> {
-    // type ContractConfigInput;
-    // type Oracle;
-    // type Attestation;
-    // type Transaction;
-    // type AdaptorSignature;
-
     fn new(name: &str, oracle: Arc<O>) -> Self;
 
     fn load_input(&self, input_path: &str) -> Result<(), Error>;
@@ -34,9 +28,5 @@ pub trait DlcController<ASigS: AdaptorSignatureScheme, O: Oracle> {
 
     // fn broadcast_to_blockchain(self) -> Result<(), Error>;
 }
-
-// just some commented skeleton. Going to be changed soon.
-
-// is in Mac. might take a look
 
 pub mod very_simple_controller;

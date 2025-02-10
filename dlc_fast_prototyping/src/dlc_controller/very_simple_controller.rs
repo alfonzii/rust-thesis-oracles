@@ -24,11 +24,11 @@ where
     oracle: Arc<O>,
     private_key: SecretKey,
     storage: SimpleArrayStorage<ASigS>,
-    cp_verification_key: types::VerificationKey,
+    cp_verification_key: PublicKey,
     cp_adaptors: Vec<ASigS::AdaptorSignature>,
     oracle_attestation: OracleAttestation,
     next_attestation_time: u32,
-    _phantom_scheme: PhantomData<ASigS>,
+    _phantom1: PhantomData<ASigS>,
 }
 
 impl<ASigS, O> DlcController<ASigS, O> for VerySimpleController<ASigS, O>
@@ -59,7 +59,7 @@ where
             cp_adaptors,
             oracle_attestation,
             next_attestation_time,
-            _phantom_scheme: PhantomData,
+            _phantom1: PhantomData,
         }
     }
 
@@ -71,15 +71,15 @@ where
         let cd: ContractDescriptor<OutcomeU32> =
             (0..=255).map(|i| (OutcomeU32::from(i), i)).collect();
 
-        let event_ancmt = self.oracle.get_event_announcement(0);
+        let event_anncmt = self.oracle.get_event_announcement(0);
 
         let storage_elements_vec =
             SimpleDlcComputation::<ASigS, SimpleCryptoUtils>::compute_storage_elements_vec(
                 &cd,
                 255,
                 &self.private_key,
-                &event_ancmt.public_key,
-                &event_ancmt.public_nonces[0],
+                &event_anncmt.public_key,
+                &event_anncmt.public_nonces[0],
             );
 
         for ((outcome, _), element) in cd.into_iter().zip(storage_elements_vec) {
@@ -88,7 +88,7 @@ where
         Ok(())
     }
 
-    fn share_verification_key(&self) -> types::PublicKey {
+    fn share_verification_key(&self) -> PublicKey {
         self.private_key.public_key(secp256k1_zkp::SECP256K1)
     }
 
@@ -96,7 +96,7 @@ where
         self.storage.get_all_my_adaptors()
     }
 
-    fn save_cp_verification_key(&mut self, cp_verification_key: types::VerificationKey) {
+    fn save_cp_verification_key(&mut self, cp_verification_key: PublicKey) {
         self.cp_verification_key = cp_verification_key;
     }
 

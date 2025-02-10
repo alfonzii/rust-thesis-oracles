@@ -28,8 +28,10 @@ pub trait AdaptorSignatureScheme {
         signature: &Self::Signature,
         adaptor_signature: &Self::AdaptorSignature,
         anticipation_point: &PublicKey,
-    ) -> SecretKey; // Attestation
+    ) -> types::Attestation;
 }
 
 mod ecdsa_zkp_adaptor;
 pub use ecdsa_zkp_adaptor::EcdsaAdaptorSignatureScheme;
+
+use crate::common::types;

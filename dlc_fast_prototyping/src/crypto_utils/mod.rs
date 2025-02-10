@@ -1,5 +1,7 @@
 // src/crypto_utils/mod.rs
 
+use secp256k1_zkp::{PublicKey, SecretKey};
+
 use crate::common::types;
 
 // INFO: This module should be created probably as some independent crate from client and oracle code. It will be included both in client and oracle.
@@ -9,14 +11,14 @@ use crate::common::types;
 
 pub trait CryptoUtils {
     fn compute_anticipation_point(
-        public_key: &types::PublicKey,
-        public_nonce: &types::PublicKey,
+        public_key: &PublicKey,
+        public_nonce: &PublicKey,
         outcome: &impl types::Outcome,
     ) -> Result<types::AnticipationPoint, secp256k1_zkp::Error>;
 
     fn compute_attestation(
-        private_key: &types::PrivateKey,
-        private_nonce: &types::PrivateNonce,
+        private_key: &SecretKey,
+        private_nonce: &SecretKey,
         outcome: &impl types::Outcome,
     ) -> Result<types::Attestation, secp256k1_zkp::Error>;
 }

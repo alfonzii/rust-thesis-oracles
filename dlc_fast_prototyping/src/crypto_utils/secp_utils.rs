@@ -20,42 +20,42 @@ sha256t_hash_newtype! {
 /// Compute an anticipation point for the given public key, nonce and message.
 pub(in crate::crypto_utils) fn schnorrsig_compute_anticipation_point<C: Verification>(
     secp: &Secp256k1<C>,
-    pub_key: &PublicKey,
-    pub_nonce: &PublicKey,
+    public_key: &PublicKey,
+    public_nonce: &PublicKey,
     outcome: &impl types::Outcome,
-) -> Result<PublicKey, secp256k1_zkp::Error> {
-    let hash = create_schnorr_hash(pub_key, pub_nonce, outcome);
+) -> Result<types::AnticipationPoint, secp256k1_zkp::Error> {
+    let hash = create_schnorr_hash(public_key, public_nonce, outcome);
     let scalar = Scalar::from_be_bytes(hash).unwrap();
-    let tweaked = pub_key.mul_tweak(secp, &scalar)?;
-    Ok(pub_nonce.combine(&tweaked)?)
+    let tweaked = public_key.mul_tweak(secp, &scalar)?;
+    Ok(public_nonce.combine(&tweaked)?)
 }
 
 /// Compute an oracle attestation for the given private key, private nonce and digit index. (JUST FOR TESTING! IN REAL SCENARIO, ORACLE SHOULD DO THIS)
 pub(in crate::crypto_utils) fn schnorrsig_compute_oracle_attestation<C: Verification + Signing>(
     secp: &Secp256k1<C>,
-    priv_key: &SecretKey,
-    priv_nonce: &SecretKey,
+    private_key: &SecretKey,
+    private_nonce: &SecretKey,
     outcome: &impl types::Outcome,
-) -> Result<SecretKey, secp256k1_zkp::Error> {
+) -> Result<types::Attestation, secp256k1_zkp::Error> {
     let hash = create_schnorr_hash(
-        &PublicKey::from_secret_key(secp, priv_key),
-        &PublicKey::from_secret_key(secp, priv_nonce),
+        &PublicKey::from_secret_key(secp, private_key),
+        &PublicKey::from_secret_key(secp, private_nonce),
         outcome,
     );
     let scalar = Scalar::from_be_bytes(hash).unwrap();
-    let tweaked = Scalar::from(priv_key.mul_tweak(&scalar)?);
-    Ok(priv_nonce.add_tweak(&tweaked)?)
+    let tweaked = Scalar::from(private_key.mul_tweak(&scalar)?);
+    Ok(private_nonce.add_tweak(&tweaked)?)
 }
 
 /// Create a BIP340 hash for the given digit index (which is 1), nonce and public key.
 fn create_schnorr_hash(
-    pub_key: &PublicKey,
-    pub_nonce: &PublicKey,
+    public_key: &PublicKey,
+    public_nonce: &PublicKey,
     outcome: &impl types::Outcome,
 ) -> [u8; 32] {
     let mut buf = Vec::<u8>::new();
-    buf.extend(pub_nonce.serialize());
-    buf.extend(pub_key.serialize());
+    buf.extend(public_nonce.serialize());
+    buf.extend(public_key.serialize());
     buf.extend(outcome.serialize()); // TODO: mozno nejaka optimalizacia
     BIP340Hash::hash(&buf).to_byte_array()
 }
