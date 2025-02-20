@@ -4,7 +4,7 @@ use secp256k1_zkp::{
     Keypair, PublicKey,
 };
 
-use crate::common::{types, Outcome, OutcomeU32};
+use crate::common::{constants::MAX_OUTCOME, types, Outcome, OutcomeU32};
 use crate::crypto_utils::CryptoUtils;
 use core::marker::PhantomData;
 
@@ -23,8 +23,8 @@ impl<CU: CryptoUtils> RandIntOracle<CU> {
         let keys = Keypair::new(SECP256K1, &mut thread_rng());
 
         let mut rng = thread_rng();
-        let outcome = OutcomeU32::from(rng.gen::<u32>() % 256); // musi tu byt modulo, aby pocital atestacie len z 0-255.
-                                                                // a nasledne aby ja som potom vedel adaptovat spravne adaptor-signature
+        let outcome = OutcomeU32::from(rng.gen::<u32>() % MAX_OUTCOME); // musi tu byt modulo, aby pocital atestacie len z 0-MAX_OUTCOME.
+                                                                        // a nasledne aby ja som potom vedel adaptovat spravne adaptor-signature
 
         Self {
             nonces,

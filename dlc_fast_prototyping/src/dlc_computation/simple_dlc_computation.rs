@@ -1,11 +1,10 @@
 // src/dlc_computation/simple_dlc_computation.rs
 
-use secp256k1_zkp::{Message, PublicKey, SecretKey};
-use sha2::{Digest, Sha256};
+use secp256k1_zkp::{PublicKey, SecretKey};
 
 use crate::{
     adaptor_signature_scheme::AdaptorSignatureScheme,
-    common::{types, OutcomeU32},
+    common::{self, types, OutcomeU32},
     crypto_utils::CryptoUtils,
     dlc_computation::DlcComputation,
     dlc_storage::StorageElement,
@@ -18,37 +17,6 @@ pub struct SimpleDlcComputation<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> 
 }
 
 impl<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> SimpleDlcComputation<ASigS, CU> {
-    fn create_cet(payout: u32, total_collateral: u32) -> String {
-        format!(
-            "Alice gets {} sats and Bob gets {} sats from DLC",
-            total_collateral - payout,
-            payout
-        )
-    }
-
-    fn create_message(cet_str: &String) -> Message {
-        let hash = Sha256::digest(cet_str.as_bytes());
-        let hashed_msg: [u8; 32] = hash.into();
-        Message::from_digest_slice(&hashed_msg).unwrap()
-    }
-
-    fn compute_anticipation_point(
-        public_key: &PublicKey,
-        public_nonce: &PublicKey,
-        outcome: &impl types::Outcome,
-    ) -> types::AnticipationPoint {
-        CU::compute_anticipation_point(public_key, public_nonce, outcome).unwrap()
-    }
-
-    fn compute_adaptor_signature(
-        signing_key: &SecretKey,
-        cet_str: &String,
-        anticipation_point: &PublicKey,
-    ) -> ASigS::AdaptorSignature {
-        let msg = Self::create_message(cet_str);
-        ASigS::pre_sign(signing_key, &msg, anticipation_point)
-    }
-
     fn create_storage_element(
         cet: types::Cet,
         anticipation_point: PublicKey,
@@ -78,10 +46,12 @@ where
         let mut storage_elements_vec = Vec::with_capacity(contract_descriptor.len());
 
         for (outcome, payout) in contract_descriptor.iter() {
-            let cet_str = Self::create_cet(*payout, total_collateral);
+            let cet_str = common::fun::create_cet(*payout, total_collateral); // TODO: toto by malo asi byt nejak inak, nie ze create_cet a vytvorim string. cely tento create cet koncept by mal byt spraveny obecne. je jedno ci je CET string alebo btc tx. malo by to vsetko fungovat
+            let msg = common::fun::create_message(&cet_str).unwrap();
             let atp_point =
-                Self::compute_anticipation_point(oracle_public_key, oracle_public_nonce, outcome);
-            let my_adaptor = Self::compute_adaptor_signature(signing_key, &cet_str, &atp_point);
+                CU::compute_anticipation_point(oracle_public_key, oracle_public_nonce, outcome)
+                    .unwrap();
+            let my_adaptor = ASigS::pre_sign(signing_key, &msg, &atp_point);
             let storage_element = Self::create_storage_element(cet_str, atp_point, my_adaptor);
             storage_elements_vec.push(storage_element);
         }
@@ -101,8 +71,7 @@ where
         );
 
         for (cp_adaptor, storage_element) in cp_adaptors.iter().zip(storage_elements_vec.iter()) {
-            let msg = Self::create_message(&storage_element.cet);
-
+            let msg = common::fun::create_message(&storage_element.cet).unwrap();
             let is_verified = ASigS::pre_verify(
                 verification_key,
                 &msg,

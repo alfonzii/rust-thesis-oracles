@@ -1,15 +1,15 @@
 // src/common/types.rs
 
 use secp256k1_zkp;
-use secp256k1_zkp::PublicKey as SecpPublicKey;
-use secp256k1_zkp::SecretKey;
+// use secp256k1_zkp::PublicKey as SecpPublicKey;
+use secp256k1_zkp::{PublicKey, SecretKey};
 
 /// -- Aliases for conceptually different but physically identical types --
 // Public key-like objects
-pub type VerificationKey = SecpPublicKey;
-pub type AnticipationPoint = SecpPublicKey;
-pub type PublicKey = SecpPublicKey;
-pub type PublicNonce = SecpPublicKey;
+pub type VerificationKey = PublicKey;
+pub type AnticipationPoint = PublicKey;
+// pub type PublicKey = SecpPublicKey;
+pub type PublicNonce = PublicKey;
 
 // Private key-like objects
 pub type SigningKey = SecretKey;
@@ -23,7 +23,6 @@ pub type ContractDescriptor<O: Outcome> = Vec<(O, u32)>; // (outcome, payout) pa
 
 /// The final Bitcoin transaction or any other on-chain transaction type
 /// that will be broadcasted after finalization.
-
 pub struct FinalizedTx<Sig> {
     pub payload: Cet,
     pub signature1: Sig,
@@ -60,8 +59,8 @@ pub trait Outcome {
     /// Return the value of this Outcome.
     fn get_value(&self) -> Self::ValueType;
 
-    /// Return some form of "indicator" at the given position.
-    fn get_indicator(&self, position: u8) -> bool;
+    /// Return bit at the given position.
+    fn get_bit(&self, position: u8) -> bool;
 
     /// Serialize this Outcome into bytes to store or transmit.
     fn serialize(&self) -> Vec<u8>; // TODO: will need to remake to [u8; N], because we will be creating lots of small vectors. Instead, we can cap size of String to be equal to size of u32 and then, we know how big to return.
@@ -80,7 +79,7 @@ impl Outcome for OutcomeU32 {
         self.value
     }
 
-    fn get_indicator(&self, position: u8) -> bool {
+    fn get_bit(&self, position: u8) -> bool {
         debug_assert!(position < 32, "Position must be less than 32");
         (self.value >> position) & 1 == 1
     }
@@ -115,7 +114,7 @@ impl Outcome for OutcomeBinStr {
         self.value.clone()
     }
 
-    fn get_indicator(&self, position: u8) -> bool {
+    fn get_bit(&self, position: u8) -> bool {
         debug_assert!(
             position < self.value.len() as u8,
             "Position must be less than the length of the string"

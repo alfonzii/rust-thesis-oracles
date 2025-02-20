@@ -1,7 +1,7 @@
-use secp256k1_zkp::{Message, PublicKey, SecretKey, SECP256K1};
-use sha2::{Digest, Sha256};
+use secp256k1_zkp::{PublicKey, SecretKey, SECP256K1};
 
-use crate::common::{types, ContractDescriptor, Outcome, OutcomeU32};
+use crate::common::constants::MAX_OUTCOME;
+use crate::common::{self, types, ContractDescriptor, Outcome, OutcomeU32};
 use crate::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
 use crate::dlc_computation::simple_dlc_computation::SimpleDlcComputation;
 use crate::dlc_computation::DlcComputation;
@@ -14,6 +14,7 @@ use std::io::Error;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::u32::MAX;
 
 pub struct VerySimpleController<ASigS, O>
 where
@@ -38,14 +39,14 @@ where
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
         let private_key = SecretKey::new(&mut secp256k1_zkp::rand::thread_rng());
-        let storage = SimpleArrayStorage::new(256);
+        let storage = SimpleArrayStorage::new(MAX_OUTCOME as usize);
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
                 .unwrap()
                 .public_key(SECP256K1);
         let cp_adaptors = Vec::new();
         let oracle_attestation = OracleAttestation {
-            outcome: OutcomeU32::from(1024),
+            outcome: OutcomeU32::from(MAX),
             attestation: SecretKey::new(&mut secp256k1_zkp::rand::thread_rng()),
         };
         let next_attestation_time = 0;
@@ -68,15 +69,16 @@ where
     }
 
     fn init_storage(&mut self) -> Result<(), Error> {
-        let cd: ContractDescriptor<OutcomeU32> =
-            (0..=255).map(|i| (OutcomeU32::from(i), i)).collect();
+        let cd: ContractDescriptor<OutcomeU32> = (0..=MAX_OUTCOME - 1)
+            .map(|i| (OutcomeU32::from(i), i))
+            .collect();
 
         let event_anncmt = self.oracle.get_event_announcement(0);
 
         let storage_elements_vec =
             SimpleDlcComputation::<ASigS, SimpleCryptoUtils>::compute_storage_elements_vec(
                 &cd,
-                255,
+                MAX_OUTCOME - 1,
                 &self.private_key,
                 &event_anncmt.public_key,
                 &event_anncmt.public_nonces[0],
@@ -118,12 +120,13 @@ where
 
     fn wait_attestation(&mut self) -> bool {
         let mut attestation = self.oracle.get_event_attestation(0);
-        attestation.outcome = OutcomeU32::from(attestation.outcome.get_value() % 256);
+        attestation.outcome = OutcomeU32::from(attestation.outcome.get_value() % MAX_OUTCOME);
 
         self.oracle_attestation = attestation;
 
-        if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < 128)
-            || (self.name == "Bob" && self.oracle_attestation.outcome.get_value() >= 128)
+        if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < MAX_OUTCOME / 2)
+            || (self.name == "Bob"
+                && self.oracle_attestation.outcome.get_value() >= MAX_OUTCOME / 2)
         {
             true
         } else {
@@ -141,10 +144,7 @@ where
             .get_element(&self.oracle_attestation.outcome)
             .unwrap();
 
-        let hash = Sha256::digest(outcome_element.cet.as_bytes());
-        let hashed_message: [u8; 32] = hash.into();
-        let msg = Message::from_digest_slice(&hashed_message).unwrap();
-
+        let msg = common::fun::create_message(outcome_element.cet.as_bytes()).unwrap();
         let my_sig = self.private_key.sign_ecdsa(msg);
         let cp_sig = ASigS::adapt(
             &outcome_element.cp_adaptor_signature.unwrap(),

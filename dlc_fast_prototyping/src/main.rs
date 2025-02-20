@@ -1,14 +1,13 @@
 // main.rs
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
-use common::{types, FinalizedTx};
+use common::{constants::MAX_OUTCOME, types, FinalizedTx};
 use crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
 use dlc_controller::{very_simple_controller::VerySimpleController, DlcController};
-use secp256k1_zkp::{Message, Secp256k1};
-
-use sha2::{Digest, Sha256};
+use oracle::RandIntOracle;
+use secp256k1_zkp::Secp256k1;
 
 mod adaptor_signature_scheme;
 mod common;
@@ -18,22 +17,31 @@ mod dlc_controller;
 mod dlc_storage;
 mod oracle;
 
+// TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
+// alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
+// Change following types to test different approaches to DLC
+type MyCryptoUtils = SimpleCryptoUtils;
+type MyAdaptorSignatureScheme = EcdsaAdaptorSignatureScheme;
+
+type MyOracle = RandIntOracle<MyCryptoUtils>;
+//type MyDlcController = .... -> spravit nejaky typp podobne ako MyOracle
+
+// Constants
+const ALICE: &str = "Alice";
+const BOB: &str = "Bob";
+
 fn main() {
-    // Create oracle
-    let oracle = Arc::new(oracle::RandIntOracle::<SimpleCryptoUtils>::new());
-    println!("Oracle outcome: {:?}", oracle.get_outcome() % 256);
+    let start = Instant::now();
+
+    // Create oracle pointer, so both controllers use API of same oracle
+    let oracle = Arc::new(MyOracle::new());
+    println!("Oracle outcome: {:?}", oracle.get_outcome() % MAX_OUTCOME);
 
     // Create controllers
     let mut controller_alice =
-        VerySimpleController::<EcdsaAdaptorSignatureScheme, _>::new("Alice", Arc::clone(&oracle));
+        VerySimpleController::<MyAdaptorSignatureScheme, _>::new(ALICE, Arc::clone(&oracle));
     let mut controller_bob =
-        VerySimpleController::<EcdsaAdaptorSignatureScheme, _>::new("Bob", Arc::clone(&oracle));
-
-    // Fund the multisig address
-    let multisig = types::MultisigFundAddress::new(
-        controller_alice.share_verification_key(),
-        controller_bob.share_verification_key(),
-    );
+        VerySimpleController::<MyAdaptorSignatureScheme, _>::new(BOB, Arc::clone(&oracle));
 
     // Load input files (does nothing now)
     controller_alice
@@ -67,27 +75,34 @@ fn main() {
     controller_alice.update_cp_adaptors().unwrap();
     controller_bob.update_cp_adaptors().unwrap();
 
+    // Fund the multisig address
+    let multisig = types::MultisigFundAddress::new(
+        controller_alice.share_verification_key(),
+        controller_bob.share_verification_key(),
+    );
+
     // Wait for oracle attestation and finalize if positive
     if controller_alice.wait_attestation() {
         let finalized_tx = controller_alice.finalize_tx();
-        assert!(finalized_tx_valid(&finalized_tx, &multisig));
+        assert!(finalized_tx_valid_ecdsa(&finalized_tx, &multisig));
     }
 
     if controller_bob.wait_attestation() {
         let finalized_tx = controller_bob.finalize_tx();
-        assert!(finalized_tx_valid(&finalized_tx, &multisig));
+        assert!(finalized_tx_valid_ecdsa(&finalized_tx, &multisig));
     }
+
+    println!("Total execution time: {:?}", start.elapsed());
 }
 
-fn finalized_tx_valid(
+// TODO: idealne to dajak prerobit, aby to fungovalo aj na ecdsa aj na schnorr, pod jednou funkciou a nemusia byt na to 2
+fn finalized_tx_valid_ecdsa(
     finalized_tx: &FinalizedTx<secp256k1_zkp::ecdsa::Signature>,
     multisig: &types::MultisigFundAddress,
 ) -> bool {
     let secp = Secp256k1::verification_only();
 
-    let hash = Sha256::digest(finalized_tx.payload.as_bytes());
-    let hashed_message: [u8; 32] = hash.into();
-    let msg = match Message::from_digest_slice(&hashed_message) {
+    let msg = match common::fun::create_message(finalized_tx.payload.as_bytes()) {
         Ok(msg) => msg,
         Err(_) => return false,
     };
