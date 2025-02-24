@@ -13,7 +13,7 @@ use schnorr_fun::{
     fun::{marker::*, nonce, Scalar},
     Schnorr,
 };
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 
 use rand::rngs::ThreadRng;
 use rand_core::{OsRng, RngCore};
@@ -290,13 +290,26 @@ fn bench_schnorr_adaptor_signature_clone(c: &mut Criterion) {
     });
 }
 
+// -------------------------------------------  Create message -------------------------------------------
+
+fn bench_create_message(c: &mut Criterion) {
+    c.bench_function("create_message", |b| {
+        b.iter(|| {
+            let hash = Sha256::digest("Adaptor signature test");
+            let hashed_message: [u8; 32] = hash.into();
+            let msg = secp256k1_zkp::Message::from_digest_slice(&hashed_message).unwrap();
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10000);
     // targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
     // targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
     // targets = bench_secp256k1_zkp_key_serialize, bench_secp256k1_zkp_key_deserialize, bench_k256_key_serialize, bench_k256_key_deserialize, bench_schnorr_fun_key_serialize, bench_schnorr_fun_key_deserialize
-    targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
+    // targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
+    targets = bench_create_message
 }
 criterion_main!(benches);
 

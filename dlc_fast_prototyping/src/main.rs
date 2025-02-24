@@ -3,10 +3,12 @@
 use std::{sync::Arc, time::Instant};
 
 use adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
-use common::{constants::MAX_OUTCOME, types, FinalizedTx};
-use crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
+use common::{
+    constants::{ALICE, BOB, MAX_OUTCOME},
+    runparams::{MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle, MySignature},
+    types, FinalizedTx,
+};
 use dlc_controller::{very_simple_controller::VerySimpleController, DlcController};
-use oracle::RandIntOracle;
 use secp256k1_zkp::Secp256k1;
 
 mod adaptor_signature_scheme;
@@ -19,61 +21,188 @@ mod oracle;
 
 // TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
 // alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
-// Change following types to test different approaches to DLC
-type MyCryptoUtils = SimpleCryptoUtils;
-type MyAdaptorSignatureScheme = EcdsaAdaptorSignatureScheme;
 
-type MyOracle = RandIntOracle<MyCryptoUtils>;
-//type MyDlcController = .... -> spravit nejaky typp podobne ako MyOracle
+mod bench {
+    use std::time::{Duration, Instant};
 
-// Constants
-const ALICE: &str = "Alice";
-const BOB: &str = "Bob";
+    #[cfg(feature = "enable_benchmarks")]
+    pub fn measure_step<R, F: FnOnce() -> R>(
+        label: &str,
+        steps: &mut Vec<(String, Duration)>,
+        f: F,
+    ) -> R {
+        let start = Instant::now();
+        let result = f();
+        let duration = start.elapsed();
+        println!("{}: {}ms", label, duration.as_millis());
+        steps.push((label.to_string(), duration));
+        result
+    }
+
+    #[cfg(not(feature = "enable_benchmarks"))]
+    pub fn measure_step<R, F: FnOnce() -> R>(
+        _label: &str,
+        _steps: &mut Vec<(String, Duration)>,
+        f: F,
+    ) -> R {
+        // No-op version
+        f()
+    }
+
+    // Function to print benchmarking table.
+    pub fn print_table(steps: &Vec<(String, Duration)>, total_time: Duration) {
+        println!("-------------------------------------------------------------");
+        println!("{:<35}{:<15}{:<15}", "STEP", "TIME", "RATIO");
+        println!("-------------------------------------------------------------");
+        for (label, step_dur) in steps {
+            let ratio = (step_dur.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
+            println!(
+                "{:<35}{:<15}{:.2}%",
+                label,
+                format!("{}ms", step_dur.as_millis()),
+                ratio
+            );
+        }
+        println!("-------------------------------------------------------------");
+        println!(
+            "{:<35}{:<15}{}",
+            "TOTAL RUNTIME:",
+            format!("{}ms", total_time.as_millis()),
+            "100.00%"
+        );
+        println!("-------------------------------------------------------------");
+    }
+}
+
+// Validates (locally) final transaction which would be broadcasted to blockchain and by doing so it
+// simulates blockchain acceptance or rejection of final tx.
+fn finalized_tx_valid(
+    finalized_tx: &FinalizedTx<MySignature>,
+    multisig: &types::MultisigFundAddress,
+) -> bool {
+    let secp = Secp256k1::verification_only();
+
+    let msg = match common::fun::create_message(finalized_tx.payload.as_bytes()) {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+
+    let (sig1_ok, sig2_ok) = {
+        #[cfg(feature = "ecdsa")]
+        {
+            let sig1_ok = secp
+                .verify_ecdsa(&msg, &finalized_tx.signature1, &multisig.public_key1)
+                .is_ok();
+            let sig2_ok = secp
+                .verify_ecdsa(&msg, &finalized_tx.signature2, &multisig.public_key2)
+                .is_ok();
+            (sig1_ok, sig2_ok)
+        }
+        #[cfg(feature = "schnorr")]
+        {
+            let sig1_ok = secp
+                .verify_schnorr(
+                    &finalized_tx.signature1,
+                    &msg,
+                    &multisig.public_key1.x_only_public_key().0,
+                )
+                .is_ok();
+            let sig2_ok = secp
+                .verify_schnorr(
+                    &finalized_tx.signature2,
+                    &msg,
+                    &multisig.public_key2.x_only_public_key().0,
+                )
+                .is_ok();
+            (sig1_ok, sig2_ok)
+        }
+    };
+
+    if sig1_ok && sig2_ok {
+        println!("Transaction \"{}\" is valid.", finalized_tx.payload);
+        return true;
+    }
+    false
+}
 
 fn main() {
     let start = Instant::now();
+    let mut steps = Vec::new();
 
     // Create oracle pointer, so both controllers use API of same oracle
     let oracle = Arc::new(MyOracle::new());
-    println!("Oracle outcome: {:?}", oracle.get_outcome() % MAX_OUTCOME);
+    println!(
+        "Oracle outcome: {:?} from {:?}\n",
+        oracle.get_outcome() % MAX_OUTCOME,
+        MAX_OUTCOME
+    );
 
     // Create controllers
     let mut controller_alice =
-        VerySimpleController::<MyAdaptorSignatureScheme, _>::new(ALICE, Arc::clone(&oracle));
-    let mut controller_bob =
-        VerySimpleController::<MyAdaptorSignatureScheme, _>::new(BOB, Arc::clone(&oracle));
+        bench::measure_step("Construct Alice controller", &mut steps, || {
+            VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
+                ALICE,
+                Arc::clone(&oracle),
+            )
+        });
+    let mut controller_bob = bench::measure_step("Construct Bob controller", &mut steps, || {
+        VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
+            BOB,
+            Arc::clone(&oracle),
+        )
+    });
 
-    // Load input files (does nothing now)
-    controller_alice
-        .load_input("some/path/to/input/file")
-        .unwrap();
-    controller_bob
-        .load_input("some/path/to/input/file")
-        .unwrap();
+    // Load input files
+    bench::measure_step("Load input (Alice)", &mut steps, || {
+        controller_alice
+            .load_input("some/path/to/input/file")
+            .unwrap();
+    });
+    bench::measure_step("Load input (Bob)", &mut steps, || {
+        controller_bob
+            .load_input("some/path/to/input/file")
+            .unwrap();
+    });
 
-    // Initialize storage (heavy lifting done here)
-    controller_alice.init_storage().unwrap();
-    controller_bob.init_storage().unwrap();
+    // Initialize storage
+    bench::measure_step("Init storage (Alice)", &mut steps, || {
+        controller_alice.init_storage().unwrap();
+    });
+    bench::measure_step("Init storage (Bob)", &mut steps, || {
+        controller_bob.init_storage().unwrap();
+    });
 
     // Share verification keys and adaptors
-    controller_alice.save_cp_verification_key(controller_bob.share_verification_key());
-    controller_alice.save_cp_adaptors(controller_bob.share_adaptors());
-    controller_bob.save_cp_verification_key(controller_alice.share_verification_key());
-    controller_bob.save_cp_adaptors(controller_alice.share_adaptors());
+    bench::measure_step("Exchange keys and adaptors (Alice)", &mut steps, || {
+        controller_alice.save_cp_verification_key(controller_bob.share_verification_key());
+        controller_alice.save_cp_adaptors(controller_bob.share_adaptors());
+    });
+    bench::measure_step("Exchange keys and adaptors (Bob)", &mut steps, || {
+        controller_bob.save_cp_verification_key(controller_alice.share_verification_key());
+        controller_bob.save_cp_adaptors(controller_alice.share_adaptors());
+    });
 
     // Verify counterparty adaptors
-    assert!(
-        controller_alice.verify_cp_adaptors(),
-        "Counterparty adaptors are not valid."
-    );
-    assert!(
-        controller_bob.verify_cp_adaptors(),
-        "Counterparty adaptors are not valid."
-    );
+    bench::measure_step("Verify adaptors (Alice)", &mut steps, || {
+        assert!(
+            controller_alice.verify_cp_adaptors(),
+            "Counterparty adaptors are not valid."
+        );
+    });
+    bench::measure_step("Verify adaptors (Bob)", &mut steps, || {
+        assert!(
+            controller_bob.verify_cp_adaptors(),
+            "Counterparty adaptors are not valid."
+        );
+    });
 
     // Update counterparty adaptors
-    controller_alice.update_cp_adaptors().unwrap();
-    controller_bob.update_cp_adaptors().unwrap();
+    bench::measure_step("Update cp adaptors (Alice)", &mut steps, || {
+        controller_alice.update_cp_adaptors().unwrap()
+    });
+    bench::measure_step("Update cp adaptors (Bob)", &mut steps, || {
+        controller_bob.update_cp_adaptors().unwrap()
+    });
 
     // Fund the multisig address
     let multisig = types::MultisigFundAddress::new(
@@ -82,50 +211,31 @@ fn main() {
     );
 
     // Wait for oracle attestation and finalize if positive
-    if controller_alice.wait_attestation() {
-        let finalized_tx = controller_alice.finalize_tx();
-        assert!(finalized_tx_valid_ecdsa(&finalized_tx, &multisig));
-    }
+    bench::measure_step("Wait attestation + finalize (Alice)", &mut steps, || {
+        if controller_alice.wait_attestation() {
+            let finalized_tx = controller_alice.finalize_tx();
+            assert!(finalized_tx_valid(&finalized_tx, &multisig));
+        }
+    });
+    bench::measure_step("Wait attestation + finalize (Bob)", &mut steps, || {
+        if controller_bob.wait_attestation() {
+            let finalized_tx = controller_bob.finalize_tx();
+            assert!(finalized_tx_valid(&finalized_tx, &multisig));
+        }
+    });
 
-    if controller_bob.wait_attestation() {
-        let finalized_tx = controller_bob.finalize_tx();
-        assert!(finalized_tx_valid_ecdsa(&finalized_tx, &multisig));
-    }
-
-    println!("Total execution time: {:?}", start.elapsed());
-}
-
-// TODO: idealne to dajak prerobit, aby to fungovalo aj na ecdsa aj na schnorr, pod jednou funkciou a nemusia byt na to 2
-fn finalized_tx_valid_ecdsa(
-    finalized_tx: &FinalizedTx<secp256k1_zkp::ecdsa::Signature>,
-    multisig: &types::MultisigFundAddress,
-) -> bool {
-    let secp = Secp256k1::verification_only();
-
-    let msg = match common::fun::create_message(finalized_tx.payload.as_bytes()) {
-        Ok(msg) => msg,
-        Err(_) => return false,
-    };
-
-    if secp
-        .verify_ecdsa(&msg, &finalized_tx.signature1, &multisig.public_key1)
-        .is_err()
-    {
-        return false;
-    }
-    if secp
-        .verify_ecdsa(&msg, &finalized_tx.signature2, &multisig.public_key2)
-        .is_err()
-    {
-        return false;
-    }
-    println!("Transaction \"{}\" is valid.", finalized_tx.payload);
-    true
+    #[cfg(feature = "enable_benchmarks")]
+    let total_time = start.elapsed();
+    #[cfg(feature = "enable_benchmarks")]
+    bench::print_table(&steps, total_time);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::adaptor_signature_scheme::AdaptorSignatureScheme;
+    use crate::{
+        adaptor_signature_scheme::AdaptorSignatureScheme,
+        crypto_utils::simple_crypto_utils::SimpleCryptoUtils,
+    };
 
     use super::*;
     use rand::thread_rng;

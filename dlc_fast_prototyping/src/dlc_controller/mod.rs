@@ -2,31 +2,52 @@
 
 use secp256k1_zkp::PublicKey;
 
-use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types, oracle::Oracle};
+use crate::{
+    adaptor_signature_scheme::AdaptorSignatureScheme,
+    common::{runparams::MySignature, types},
+    crypto_utils::CryptoUtils,
+    oracle::Oracle,
+};
 use std::{io::Error, sync::Arc};
 
-pub trait DlcController<ASigS: AdaptorSignatureScheme, O: Oracle> {
+pub trait DlcController<ASigS, CU, O>
+where
+    ASigS: AdaptorSignatureScheme,
+    CU: CryptoUtils,
+    O: Oracle,
+{
+    /// Creates a new controller with a given name and oracle.
     fn new(name: &str, oracle: Arc<O>) -> Self;
 
+    /// Loads DLC input from a file.
     fn load_input(&self, input_path: &str) -> Result<(), Error>;
 
+    /// Initializes all necessary storage structures before use.
     fn init_storage(&mut self) -> Result<(), Error>;
 
-    // TODO: Share and save should look differently, but for now, we will make them as they are just for the sake of simplicity
+    /// Returns this controller's verification key.
     fn share_verification_key(&self) -> PublicKey;
-    fn share_adaptors(&self) -> Vec<ASigS::AdaptorSignature>;
-    fn save_cp_verification_key(&mut self, cp_verification_key: PublicKey) -> ();
-    fn save_cp_adaptors(&mut self, cp_adaptors: Vec<ASigS::AdaptorSignature>) -> ();
 
+    /// Returns a list of adaptors for the current DLC.
+    fn share_adaptors(&self) -> Vec<ASigS::AdaptorSignature>;
+
+    /// Saves the counterparty's verification key.
+    fn save_cp_verification_key(&mut self, cp_verification_key: PublicKey);
+
+    /// Saves the counterparty's adaptors.
+    fn save_cp_adaptors(&mut self, cp_adaptors: Vec<ASigS::AdaptorSignature>);
+
+    /// Verifies the counterparty's adaptors.
     fn verify_cp_adaptors(&self) -> bool;
 
+    /// Updates the stored adaptors with verified counterparty information.
     fn update_cp_adaptors(&mut self) -> Result<(), Error>;
 
-    fn wait_attestation(&mut self) -> bool; // Returns if outcome of event is positive for my perspective of DLC
+    /// Waits for oracle attestation to proceed with finalizing the DLC.
+    fn wait_attestation(&mut self) -> bool;
 
-    fn finalize_tx(&self) -> types::FinalizedTx<ASigS::Signature>;
-
-    // fn broadcast_to_blockchain(self) -> Result<(), Error>;
+    /// Finalizes the transaction using the relevant signatures.
+    fn finalize_tx(&self) -> types::FinalizedTx<MySignature>;
 }
 
 pub mod very_simple_controller;

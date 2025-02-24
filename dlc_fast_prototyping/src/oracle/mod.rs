@@ -11,7 +11,7 @@ pub trait Oracle {
 
 pub struct OracleAnnouncement {
     pub public_key: PublicKey,
-    pub public_nonces: Vec<PublicKey>,
+    pub public_nonce: PublicKey, // INFO: Prerobil som to na public_nonce namiesto vektoru public_nonces, pretoze v nasom kode nepoouzivame viac noncov ani atestacii. Ak by sme sa nakoniec predsa rozhodli implementovat aj to ich riesenie s digit_decomposition, tak sa nonce aj atestacie prerobia na vector, a v asom pripade budu vraciat [0] prvok.
     pub next_attestation_time: u32, // unix timestamp
 }
 

@@ -1,1 +1,1 @@
-// placeholder
+pub struct SchnorrAdaptorSignatureScheme;

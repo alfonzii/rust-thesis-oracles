@@ -46,12 +46,21 @@ where
         let mut storage_elements_vec = Vec::with_capacity(contract_descriptor.len());
 
         for (outcome, payout) in contract_descriptor.iter() {
+            // Create CET from the contract descriptor element
             let cet_str = common::fun::create_cet(*payout, total_collateral); // TODO: toto by malo asi byt nejak inak, nie ze create_cet a vytvorim string. cely tento create cet koncept by mal byt spraveny obecne. je jedno ci je CET string alebo btc tx. malo by to vsetko fungovat
+
+            // Create message from CET which will be used later for all math operations
             let msg = common::fun::create_message(&cet_str).unwrap();
+
+            // Compute anticipation point
             let atp_point =
                 CU::compute_anticipation_point(oracle_public_key, oracle_public_nonce, outcome)
                     .unwrap();
+
+            // Compute my adaptor signature
             let my_adaptor = ASigS::pre_sign(signing_key, &msg, &atp_point);
+
+            // Create storage element
             let storage_element = Self::create_storage_element(cet_str, atp_point, my_adaptor);
             storage_elements_vec.push(storage_element);
         }

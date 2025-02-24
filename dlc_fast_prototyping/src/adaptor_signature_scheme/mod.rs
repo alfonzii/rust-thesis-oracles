@@ -32,6 +32,9 @@ pub trait AdaptorSignatureScheme {
 }
 
 mod ecdsa_zkp_adaptor;
+mod schnorr_zkp_adaptor;
+
 pub use ecdsa_zkp_adaptor::EcdsaAdaptorSignatureScheme;
+pub use schnorr_zkp_adaptor::SchnorrAdaptorSignatureScheme;
 
 use crate::common::types;

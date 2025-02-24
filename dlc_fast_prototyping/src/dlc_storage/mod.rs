@@ -4,22 +4,18 @@ use secp256k1_zkp::{PublicKey, SecretKey, SECP256K1};
 
 use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types};
 
-pub trait DlcStorage<ASigS, Outcome>
+pub trait DlcStorage<ASigS, Out>
 where
     ASigS: AdaptorSignatureScheme,
-    Outcome: types::Outcome,
+    Out: types::Outcome,
 {
     fn new(nb_outcomes: usize) -> Self
     where
         Self: Sized;
 
-    fn put_element(
-        &mut self,
-        outcome: &Outcome,
-        element: StorageElement<ASigS>,
-    ) -> Result<(), Error>;
+    fn put_element(&mut self, outcome: &Out, element: StorageElement<ASigS>) -> Result<(), Error>;
 
-    fn get_element(&self, outcome: &Outcome) -> Option<StorageElement<ASigS>>;
+    fn get_element(&self, outcome: &Out) -> Option<StorageElement<ASigS>>;
     fn get_all_my_adaptors(&self) -> Vec<ASigS::AdaptorSignature>;
 
     fn get_all_elements_vec_ref(&self) -> &Vec<StorageElement<ASigS>>;

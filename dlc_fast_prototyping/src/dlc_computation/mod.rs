@@ -31,7 +31,4 @@ where
     ) -> bool;
 }
 
-//fn get_unified_outcome(outcome: types::Outcome) -> Storage::UniOutcome;
-// TODO: tieto unified outcome gettery budu potom pravdepodobne v Parseri pretoze ten to uz sam nejak unifikuje/aggreguje, takze dava zmysel, zeby si to rovno niekde ulozil a nasledne sa ho mozeme dotazovat
-
 pub mod simple_dlc_computation;

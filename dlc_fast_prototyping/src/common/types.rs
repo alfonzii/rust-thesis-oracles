@@ -4,18 +4,9 @@ use secp256k1_zkp;
 // use secp256k1_zkp::PublicKey as SecpPublicKey;
 use secp256k1_zkp::{PublicKey, SecretKey};
 
-/// -- Aliases for conceptually different but physically identical types --
-// Public key-like objects
-pub type VerificationKey = PublicKey;
+/// -- Aliases for outcome types --
 pub type AnticipationPoint = PublicKey;
-// pub type PublicKey = SecpPublicKey;
-pub type PublicNonce = PublicKey;
-
-// Private key-like objects
-pub type SigningKey = SecretKey;
 pub type Attestation = SecretKey;
-pub type PrivateKey = SecretKey;
-pub type PrivateNonce = SecretKey;
 
 // Other
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)

@@ -47,7 +47,7 @@ impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
     fn get_event_announcement(&self, event_id: u32) -> OracleAnnouncement {
         OracleAnnouncement {
             public_key: self.keys.public_key(),
-            public_nonces: vec![self.nonces.public_key()],
+            public_nonce: self.nonces.public_key(),
             next_attestation_time: 0,
         }
     }
