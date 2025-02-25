@@ -64,12 +64,11 @@ fn bench_pre_sign(c: &mut Criterion) {
             .unwrap();
     c.bench_function("pre_sign", |b| {
         b.iter(|| {
-            let ad_sig = black_box(EcdsaAdaptorSignatureScheme::pre_sign(
+            let _ = black_box(EcdsaAdaptorSignatureScheme::pre_sign(
                 &signing_sk,
                 &msg,
                 &atp_point,
             ));
-            black_box(ad_sig)
         })
     });
 }
