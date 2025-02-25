@@ -34,7 +34,7 @@ mod bench {
         let start = Instant::now();
         let result = f();
         let duration = start.elapsed();
-        println!("{}: {}ms", label, duration.as_millis());
+        //println!("{}: {}ms", label, duration.as_millis());
         steps.push((label.to_string(), duration));
         result
     }
@@ -51,7 +51,7 @@ mod bench {
 
     // Function to print benchmarking table.
     pub fn print_table(steps: &Vec<(String, Duration)>, total_time: Duration) {
-        println!("-------------------------------------------------------------");
+        println!("\n-------------------------------------------------------------");
         println!("{:<35}{:<15}{:<15}", "STEP", "TIME", "RATIO");
         println!("-------------------------------------------------------------");
         for (label, step_dur) in steps {
@@ -132,7 +132,7 @@ fn main() {
     // Create oracle pointer, so both controllers use API of same oracle
     let oracle = Arc::new(MyOracle::new());
     println!(
-        "Oracle outcome: {:?} from {:?}\n",
+        "Oracle outcome: {:?} from {:?}",
         oracle.get_outcome() % MAX_OUTCOME,
         MAX_OUTCOME
     );
@@ -264,6 +264,7 @@ mod tests {
 
         let secp = Secp256k1::new();
         let mut rng = thread_rng();
+        let crypto_utils_engine = SimpleCryptoUtils::new();
 
         // Generate signer keypair
         let (signer_sk, signer_pk) = secp.generate_keypair(&mut rng);
@@ -280,9 +281,9 @@ mod tests {
         let outcome = OutcomeU32::from(outcome_value);
 
         // Compute anticipation point using SimpleCryptoUtils
-        let anticipation_point =
-            SimpleCryptoUtils::compute_anticipation_point(&signer_pk, &nonce_pk, &outcome)
-                .expect("Failed to compute anticipation point");
+        let anticipation_point = crypto_utils_engine
+            .compute_anticipation_point(&signer_pk, &nonce_pk, &outcome)
+            .expect("Failed to compute anticipation point");
 
         // Create adaptor signature and verify pre-adaptation
         let adaptor_sig =
@@ -298,7 +299,8 @@ mod tests {
         );
 
         // Compute attestation using SimpleCryptoUtils (using nonce_sk as private nonce)
-        let attestation = SimpleCryptoUtils::compute_attestation(&signer_sk, &nonce_sk, &outcome)
+        let attestation = crypto_utils_engine
+            .compute_attestation(&signer_sk, &nonce_sk, &outcome)
             .expect("Failed to compute attestation");
 
         // Adapt the adaptor signature using computed attestation and verify signature

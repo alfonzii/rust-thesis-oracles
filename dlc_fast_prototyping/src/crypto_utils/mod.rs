@@ -10,13 +10,19 @@ use crate::common::types;
 // DISCLAIMER: one thing to bear in mind is, that both computation of anticipation point and attestation must use equivalent algorithms.
 
 pub trait CryptoUtils {
+    fn new() -> Self
+    where
+        Self: Sized;
+
     fn compute_anticipation_point(
+        &self,
         public_key: &PublicKey,
         public_nonce: &PublicKey,
         outcome: &impl types::Outcome,
     ) -> Result<types::AnticipationPoint, secp256k1_zkp::Error>;
 
     fn compute_attestation(
+        &self,
         private_key: &SecretKey,
         private_nonce: &SecretKey,
         outcome: &impl types::Outcome,

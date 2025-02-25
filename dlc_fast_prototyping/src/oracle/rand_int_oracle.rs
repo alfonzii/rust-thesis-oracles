@@ -15,6 +15,7 @@ pub struct RandIntOracle<CU: CryptoUtils> {
     keys: Keypair,
     outcome: types::OutcomeU32,
     _phantom: PhantomData<CU>,
+    crypto_utils_engine: CU,
 }
 
 impl<CU: CryptoUtils> RandIntOracle<CU> {
@@ -26,11 +27,14 @@ impl<CU: CryptoUtils> RandIntOracle<CU> {
         let outcome = OutcomeU32::from(rng.gen::<u32>() % MAX_OUTCOME); // musi tu byt modulo, aby pocital atestacie len z 0-MAX_OUTCOME.
                                                                         // a nasledne aby ja som potom vedel adaptovat spravne adaptor-signature
 
+        let cu_engine = CU::new();
+
         Self {
             nonces,
             keys,
             outcome,
             _phantom: PhantomData,
+            crypto_utils_engine: cu_engine,
         }
     }
 
@@ -55,12 +59,14 @@ impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
     fn get_event_attestation(&self, event_id: u32) -> OracleAttestation {
         OracleAttestation {
             outcome: self.outcome,
-            attestation: CU::compute_attestation(
-                &self.keys.secret_key(),
-                &self.nonces.secret_key(),
-                &self.outcome,
-            )
-            .expect("Error computing event attestation"),
+            attestation: self
+                .crypto_utils_engine
+                .compute_attestation(
+                    &self.keys.secret_key(),
+                    &self.nonces.secret_key(),
+                    &self.outcome,
+                )
+                .expect("Error computing event attestation"),
         }
     }
 }

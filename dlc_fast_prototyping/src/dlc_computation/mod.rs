@@ -14,7 +14,12 @@ where
     CU: CryptoUtils,
     Out: types::Outcome,
 {
+    fn new() -> Self
+    where
+        Self: Sized;
+
     fn compute_storage_elements_vec(
+        &self,
         // TODO: dat sem mozno niekde nb_outcomes, lebo pri pushovani do vec storageelement budeme realokovat
         // a my vlastne tak nejak tusime, aky velky ma byy ten vektor. bud velkosti Buff ktory vracia parser, alebo velkosti "nb_outcomes"
         contract_descriptor: &types::ContractDescriptor<Out>,
@@ -25,6 +30,7 @@ where
     ) -> Vec<StorageElement<ASigS>>;
 
     fn verify_cp_adaptors(
+        &self,
         verification_key: &PublicKey,
         cp_adaptors: &Vec<ASigS::AdaptorSignature>,
         storage_elements_vec: &Vec<StorageElement<ASigS>>,
