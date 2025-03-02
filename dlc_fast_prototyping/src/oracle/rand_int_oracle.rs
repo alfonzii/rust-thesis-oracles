@@ -27,7 +27,7 @@ impl<CU: CryptoUtils> RandIntOracle<CU> {
         let outcome = OutcomeU32::from(rng.gen::<u32>() % MAX_OUTCOME); // musi tu byt modulo, aby pocital atestacie len z 0-MAX_OUTCOME.
                                                                         // a nasledne aby ja som potom vedel adaptovat spravne adaptor-signature
 
-        let cu_engine = CU::new();
+        let cu_engine = CU::new(&keys.public_key(), &nonces.public_key());
 
         Self {
             nonces,

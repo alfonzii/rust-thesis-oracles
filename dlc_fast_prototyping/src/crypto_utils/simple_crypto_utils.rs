@@ -3,20 +3,29 @@ use secp256k1_zkp::{PublicKey, SecretKey, SECP256K1};
 
 use super::CryptoUtils;
 
-pub struct SimpleCryptoUtils;
+pub struct SimpleCryptoUtils {
+    public_key: PublicKey,
+    public_nonce: PublicKey,
+}
 
 impl CryptoUtils for SimpleCryptoUtils {
-    fn new() -> Self {
-        Self
+    fn new(public_key: &PublicKey, public_nonce: &PublicKey) -> Self {
+        Self {
+            public_key: public_key.clone(),
+            public_nonce: public_nonce.clone(),
+        }
     }
 
     fn compute_anticipation_point(
         &self,
-        public_key: &PublicKey,
-        public_nonce: &PublicKey,
         outcome: &impl types::Outcome,
     ) -> Result<types::AnticipationPoint, secp256k1_zkp::Error> {
-        schnorrsig_compute_anticipation_point(SECP256K1, public_key, public_nonce, outcome)
+        schnorrsig_compute_anticipation_point(
+            SECP256K1,
+            &self.public_key,
+            &self.public_nonce,
+            outcome,
+        )
     }
 
     fn compute_attestation(

@@ -34,7 +34,6 @@ where
     oracle: Arc<O>,
     private_key: SecretKey,
     storage: SimpleArrayStorage<ASigS>,
-    computation: SimpleDlcComputation<ASigS, CU>,
 
     cp_verification_key: PublicKey,
     cp_adaptors: Vec<ASigS::AdaptorSignature>,
@@ -64,14 +63,12 @@ where
             attestation: SecretKey::new(&mut rand::thread_rng()),
         };
         let next_attestation_time = 0;
-        let computation = SimpleDlcComputation::<ASigS, CU>::new();
 
         Self {
             name: name.to_string(),
             oracle,
             private_key,
             storage,
-            computation,
             cp_verification_key,
             cp_adaptors,
             oracle_attestation,
@@ -97,7 +94,7 @@ where
 
         // Compute storage elements vector for all outcomes
         // create cet -> atp point -> adaptor sig -> storage element
-        let storage_elements_vec = self.computation.compute_storage_elements_vec(
+        let storage_elements_vec = SimpleDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &cd,
             MAX_OUTCOME - 1,
             &self.private_key,
@@ -129,7 +126,7 @@ where
     }
 
     fn verify_cp_adaptors(&self) -> bool {
-        self.computation.verify_cp_adaptors(
+        SimpleDlcComputation::<ASigS, CU>::verify_cp_adaptors(
             &self.cp_verification_key,
             &self.cp_adaptors,
             self.storage.get_all_elements_vec_ref(),
@@ -174,15 +171,15 @@ where
         #[cfg(feature = "schnorr")]
         let my_sig = self.private_key.keypair(SECP256K1).sign_schnorr(msg);
 
-        let adapted_sig = ASigS::adapt(
+        let cp_sig = ASigS::adapt(
             &outcome_element.cp_adaptor_signature.unwrap(),
             &self.oracle_attestation.attestation,
         );
 
         if self.name == "Alice" {
-            types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, my_sig, adapted_sig)
+            types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, my_sig, cp_sig)
         } else if self.name == "Bob" {
-            types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, adapted_sig, my_sig)
+            types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, cp_sig, my_sig)
         } else {
             // Fallback (or panic) if name is neither "Alice" nor "Bob"
             panic!("Unknown controller name: {}", self.name);

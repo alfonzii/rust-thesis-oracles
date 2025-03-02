@@ -12,8 +12,6 @@ use crate::{
 use std::marker::PhantomData;
 
 pub struct SimpleDlcComputation<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> {
-    crypto_utils_engine: CU,
-
     _phantom1: PhantomData<ASigS>,
     _phantom2: PhantomData<CU>,
 }
@@ -38,19 +36,7 @@ where
     ASigS: AdaptorSignatureScheme,
     CU: CryptoUtils,
 {
-    fn new() -> Self
-    where
-        Self: Sized,
-    {
-        Self {
-            crypto_utils_engine: CU::new(),
-            _phantom1: PhantomData,
-            _phantom2: PhantomData,
-        }
-    }
-
     fn compute_storage_elements_vec(
-        &self,
         contract_descriptor: &types::ContractDescriptor<OutcomeU32>,
         total_collateral: u32,
         signing_key: &SecretKey,
@@ -58,6 +44,8 @@ where
         oracle_public_nonce: &PublicKey,
     ) -> Vec<StorageElement<ASigS>> {
         let mut storage_elements_vec = Vec::with_capacity(contract_descriptor.len());
+
+        let crypto_utils_engine = CU::new(oracle_public_key, oracle_public_nonce);
 
         for (outcome, payout) in contract_descriptor.iter() {
             // Create CET from the contract descriptor element
@@ -67,15 +55,13 @@ where
             let msg = common::fun::create_message(&cet_str).unwrap();
 
             // Compute anticipation point
-            let atp_point = self
-                .crypto_utils_engine
-                .compute_anticipation_point(oracle_public_key, oracle_public_nonce, outcome)
+            let atp_point = crypto_utils_engine
+                .compute_anticipation_point(outcome)
                 .unwrap();
 
             // Compute my adaptor signature
             let my_adaptor = ASigS::pre_sign(signing_key, &msg, &atp_point);
 
-            //
             let storage_element = Self::create_storage_element(cet_str, atp_point, my_adaptor);
             storage_elements_vec.push(storage_element);
         }
@@ -84,7 +70,6 @@ where
     }
 
     fn verify_cp_adaptors(
-        &self,
         verification_key: &PublicKey,
         cp_adaptors: &Vec<ASigS::AdaptorSignature>,
         storage_elements_vec: &Vec<StorageElement<ASigS>>,

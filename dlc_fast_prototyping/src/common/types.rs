@@ -53,6 +53,9 @@ pub trait Outcome {
     /// Return bit at the given position.
     fn get_bit(&self, position: u8) -> bool;
 
+    /// Return true if the outcome is zero.
+    fn is_zero(&self) -> bool;
+
     /// Serialize this Outcome into bytes to store or transmit.
     fn serialize(&self) -> Vec<u8>; // TODO: will need to remake to [u8; N], because we will be creating lots of small vectors. Instead, we can cap size of String to be equal to size of u32 and then, we know how big to return.
 }
@@ -73,6 +76,10 @@ impl Outcome for OutcomeU32 {
     fn get_bit(&self, position: u8) -> bool {
         debug_assert!(position < 32, "Position must be less than 32");
         (self.value >> position) & 1 == 1
+    }
+
+    fn is_zero(&self) -> bool {
+        self.value == 0
     }
 
     fn serialize(&self) -> Vec<u8> {
@@ -111,6 +118,10 @@ impl Outcome for OutcomeBinStr {
             "Position must be less than the length of the string"
         );
         self.value.chars().nth(position as usize) == Some('1')
+    }
+
+    fn is_zero(&self) -> bool {
+        self.value.chars().all(|c| c == '0')
     }
 
     fn serialize(&self) -> Vec<u8> {

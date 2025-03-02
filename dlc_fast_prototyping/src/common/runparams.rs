@@ -1,8 +1,9 @@
 // src/common/runparams.rs
 
+use crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
+use crate::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
 use crate::{
     adaptor_signature_scheme::{EcdsaAdaptorSignatureScheme, SchnorrAdaptorSignatureScheme},
-    crypto_utils::simple_crypto_utils::SimpleCryptoUtils,
     oracle::RandIntOracle,
 };
 
@@ -17,7 +18,7 @@ pub type MyAdaptorSignatureScheme = SchnorrAdaptorSignatureScheme;
 pub type MySignature = secp256k1_zkp::schnorr::Signature;
 
 // Change following types to test different approaches to DLC
-pub type MyCryptoUtils = SimpleCryptoUtils;
+pub type MyCryptoUtils = BasisCryptoUtils;
 pub type MyOracle = RandIntOracle<MyCryptoUtils>;
 //type MyDlcController = .... -> spravit nejaky typ podobne ako MyOracle
 

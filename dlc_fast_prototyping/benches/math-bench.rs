@@ -1,4 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use dlc_fast_prototyping::common::runparams::MyCryptoUtils;
 use rand::thread_rng;
 use secp256k1_zkp::Secp256k1;
 
@@ -8,7 +9,6 @@ use dlc_fast_prototyping::adaptor_signature_scheme::{
 };
 use dlc_fast_prototyping::common::fun; // contains create_cet and create_message
 use dlc_fast_prototyping::common::types::OutcomeU32;
-use dlc_fast_prototyping::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
 use dlc_fast_prototyping::crypto_utils::CryptoUtils;
 
 fn bench_create_cet(c: &mut Criterion) {
@@ -36,15 +36,11 @@ fn bench_compute_anticipation_point(c: &mut Criterion) {
     let secp = Secp256k1::new();
     let (_, oracle_pub) = secp.generate_keypair(&mut thread_rng());
     let (_, oracle_nonce) = secp.generate_keypair(&mut thread_rng());
+    let crypto_utils_engine = MyCryptoUtils::new(&oracle_pub, &oracle_nonce);
     let outcome = OutcomeU32::from(5);
     c.bench_function("compute_anticipation_point", |b| {
         b.iter(|| {
-            let atp = black_box(SimpleCryptoUtils::compute_anticipation_point(
-                &oracle_pub,
-                &oracle_nonce,
-                &outcome,
-            ))
-            .unwrap();
+            let atp = black_box(crypto_utils_engine.compute_anticipation_point(&outcome)).unwrap();
             black_box(atp)
         })
     });
@@ -58,10 +54,11 @@ fn bench_pre_sign(c: &mut Criterion) {
     // For anticipation point, generate dummy keys:
     let (_, oracle_pub) = secp.generate_keypair(&mut thread_rng());
     let (_, oracle_nonce) = secp.generate_keypair(&mut thread_rng());
+    let crypto_utils_engine = MyCryptoUtils::new(&oracle_pub, &oracle_nonce);
     let outcome = OutcomeU32::from(5);
-    let atp_point =
-        SimpleCryptoUtils::compute_anticipation_point(&oracle_pub, &oracle_nonce, &outcome)
-            .unwrap();
+    let atp_point = crypto_utils_engine
+        .compute_anticipation_point(&outcome)
+        .unwrap();
     c.bench_function("pre_sign", |b| {
         b.iter(|| {
             let _ = black_box(EcdsaAdaptorSignatureScheme::pre_sign(

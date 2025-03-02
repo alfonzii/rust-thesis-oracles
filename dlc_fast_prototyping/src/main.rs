@@ -34,7 +34,7 @@ mod bench {
         let start = Instant::now();
         let result = f();
         let duration = start.elapsed();
-        //println!("{}: {}ms", label, duration.as_millis());
+        println!("{}: {}ms", label, duration.as_millis());
         steps.push((label.to_string(), duration));
         result
     }
@@ -264,12 +264,14 @@ mod tests {
 
         let secp = Secp256k1::new();
         let mut rng = thread_rng();
-        let crypto_utils_engine = SimpleCryptoUtils::new();
 
         // Generate signer keypair
         let (signer_sk, signer_pk) = secp.generate_keypair(&mut rng);
         // Generate nonce keypair (for anticipation point / attestation)
         let (nonce_sk, nonce_pk) = secp.generate_keypair(&mut rng);
+
+        // Create SimpleCryptoUtils engine
+        let crypto_utils_engine = MyCryptoUtils::new(&signer_pk, &nonce_pk);
 
         // Create message
         let message_str = "Adaptor signature test";
@@ -282,7 +284,7 @@ mod tests {
 
         // Compute anticipation point using SimpleCryptoUtils
         let anticipation_point = crypto_utils_engine
-            .compute_anticipation_point(&signer_pk, &nonce_pk, &outcome)
+            .compute_anticipation_point(&outcome)
             .expect("Failed to compute anticipation point");
 
         // Create adaptor signature and verify pre-adaptation
