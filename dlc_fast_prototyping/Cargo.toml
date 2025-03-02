@@ -6,12 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-secp256k1-zkp = {version = "0.11.0", features = ["rand", "rand-std", "global-context"]}
+# secp256k1-zkp = {version = "0.11.0", features = ["rand", "rand-std", "global-context"]}
+secp256k1-zkp = { git = "https://github.com/siv2r/rust-secp256k1-zkp.git", branch = "schnorr-adaptor-bindings", features = ["rand", "rand-std", "global-context"] }
 rand = "0.8.5"
 rand_core = { version = "0.6.4", features = ["getrandom"] }
 bitcoin = "0.32.4"
 sha2 = "0.10.8"
-# bitvec = "1.0.1"
 
 [dev-dependencies]
 k256 = "0.13.4"
@@ -31,4 +31,4 @@ name = "math-bench"
 ecdsa = []
 schnorr = []
 enable_benchmarks = []
-default = ["ecdsa"]
+default = []
