@@ -31,4 +31,5 @@ where
     ) -> bool;
 }
 
-pub mod simple_dlc_computation;
+pub mod parallel_dlc_computation;
+pub mod serial_dlc_computation;

@@ -12,6 +12,7 @@ rand = "0.8.5"
 rand_core = { version = "0.6.4", features = ["getrandom"] }
 bitcoin = "0.32.4"
 sha2 = "0.10.8"
+rayon = "1.10.0"
 
 [dev-dependencies]
 k256 = "0.13.4"
@@ -31,4 +32,4 @@ name = "math-bench"
 ecdsa = []
 schnorr = []
 enable_benchmarks = []
-default = []
+default = ["ecdsa"]

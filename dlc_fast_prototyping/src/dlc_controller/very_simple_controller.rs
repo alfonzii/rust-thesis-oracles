@@ -4,7 +4,8 @@ use crate::common::constants::MAX_OUTCOME;
 use crate::common::runparams::MySignature;
 use crate::common::{self, types, ContractDescriptor, Outcome, OutcomeU32};
 use crate::crypto_utils::CryptoUtils;
-use crate::dlc_computation::simple_dlc_computation::SimpleDlcComputation;
+use crate::dlc_computation::parallel_dlc_computation::ParallelDlcComputation;
+use crate::dlc_computation::serial_dlc_computation::SerialDlcComputation;
 use crate::dlc_computation::DlcComputation;
 use crate::dlc_storage::simple_array_storage::SimpleArrayStorage;
 use crate::dlc_storage::DlcStorage;
@@ -22,7 +23,7 @@ use std::u32::MAX;
 // Not using those yet. Lets see in future, how will different controllers be programmed and how will
 // this change. Not sure, if we actually want to allow changing of Storage and Computation for concrete controller implementations.
 type MyDlcStorage<T> = SimpleArrayStorage<T>;
-type MyDlcComputation<A, C> = SimpleDlcComputation<A, C>;
+type MyDlcComputation<A, C> = ParallelDlcComputation<A, C>;
 
 pub struct VerySimpleController<ASigS, CU, O>
 where
@@ -47,7 +48,8 @@ where
 impl<ASigS, CU, O> DlcController<ASigS, CU, O> for VerySimpleController<ASigS, CU, O>
 where
     ASigS: AdaptorSignatureScheme<Signature = MySignature>,
-    CU: CryptoUtils,
+    ASigS::AdaptorSignature: Send + Sync,
+    CU: CryptoUtils + Sync,
     O: Oracle,
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
@@ -94,7 +96,7 @@ where
 
         // Compute storage elements vector for all outcomes
         // create cet -> atp point -> adaptor sig -> storage element
-        let storage_elements_vec = SimpleDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
+        let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &cd,
             MAX_OUTCOME - 1,
             &self.private_key,
@@ -126,7 +128,7 @@ where
     }
 
     fn verify_cp_adaptors(&self) -> bool {
-        SimpleDlcComputation::<ASigS, CU>::verify_cp_adaptors(
+        MyDlcComputation::<ASigS, CU>::verify_cp_adaptors(
             &self.cp_verification_key,
             &self.cp_adaptors,
             self.storage.get_all_elements_vec_ref(),

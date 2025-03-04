@@ -58,29 +58,26 @@ impl CryptoUtils for BasisCryptoUtils {
         &self,
         outcome: &impl types::Outcome,
     ) -> Result<types::AnticipationPoint, Error> {
+        use secp256k1_zkp::PublicKey;
+
         // If the outcome is zero, use exceptional anticipation point.
         if outcome.is_zero() {
-            let atp_point_zero = schnorrsig_compute_anticipation_point(
+            return schnorrsig_compute_anticipation_point(
                 SECP256K1,
                 &self.public_key,
                 &self.public_nonce,
                 &OutcomeU32::from(ZERO_OUTCOME_ATP),
             );
-            return atp_point_zero;
         }
 
-        // Else if outcome is not zero: Initialize combined with the first non-zero bit's precomputed point.
-        let first_index = (0..NB_DIGITS)
-            .find(|&i| outcome.get_bit(i as u8))
-            .ok_or(Error::InvalidGenerator)?; // TODO: unrelated error, but just now for quick fix
-        let mut combined = self.precomputed_points[first_index as usize];
-
-        // Iterate from the next index onward and combine if the outcome bit is set.
-        for i in (first_index + 1)..NB_DIGITS {
+        // Else if outcome is not zero: Select basis atp_points and combine them.
+        let mut selected_basis_atps = Vec::new();
+        for i in 0..NB_DIGITS {
             if outcome.get_bit(i as u8) {
-                combined = combined.combine(&self.precomputed_points[i as usize])?;
+                selected_basis_atps.push(&self.precomputed_points[i as usize]);
             }
         }
+        let combined = PublicKey::combine_keys(&selected_basis_atps)?;
         Ok(combined)
     }
 

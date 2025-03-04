@@ -1,4 +1,4 @@
-// src/dlc_computation/simple_dlc_computation.rs
+// src/dlc_computation/serial_dlc_computation.rs
 
 use secp256k1_zkp::{PublicKey, SecretKey};
 
@@ -11,12 +11,12 @@ use crate::{
 };
 use std::marker::PhantomData;
 
-pub struct SimpleDlcComputation<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> {
+pub struct SerialDlcComputation<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> {
     _phantom1: PhantomData<ASigS>,
     _phantom2: PhantomData<CU>,
 }
 
-impl<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> SimpleDlcComputation<ASigS, CU> {
+impl<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> SerialDlcComputation<ASigS, CU> {
     fn create_storage_element(
         cet: types::Cet,
         anticipation_point: PublicKey,
@@ -31,7 +31,7 @@ impl<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> SimpleDlcComputation<ASigS,
     }
 }
 
-impl<ASigS, CU> DlcComputation<ASigS, CU, types::OutcomeU32> for SimpleDlcComputation<ASigS, CU>
+impl<ASigS, CU> DlcComputation<ASigS, CU, types::OutcomeU32> for SerialDlcComputation<ASigS, CU>
 where
     ASigS: AdaptorSignatureScheme,
     CU: CryptoUtils,

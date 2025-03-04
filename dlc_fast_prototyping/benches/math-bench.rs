@@ -35,7 +35,7 @@ fn bench_compute_anticipation_point(c: &mut Criterion) {
     let (_, oracle_pub) = secp.generate_keypair(&mut thread_rng());
     let (_, oracle_nonce) = secp.generate_keypair(&mut thread_rng());
     let crypto_utils_engine = MyCryptoUtils::new(&oracle_pub, &oracle_nonce);
-    let outcome = OutcomeU32::from(5);
+    let outcome = OutcomeU32::from(1_048_570);
     c.bench_function("compute_anticipation_point", |b| {
         b.iter(|| {
             let atp = black_box(crypto_utils_engine.compute_anticipation_point(&outcome)).unwrap();
@@ -53,7 +53,7 @@ fn bench_pre_sign(c: &mut Criterion) {
     let (_, oracle_pub) = secp.generate_keypair(&mut thread_rng());
     let (_, oracle_nonce) = secp.generate_keypair(&mut thread_rng());
     let crypto_utils_engine = MyCryptoUtils::new(&oracle_pub, &oracle_nonce);
-    let outcome = OutcomeU32::from(5);
+    let outcome = OutcomeU32::from(1_048_570);
     let atp_point = crypto_utils_engine
         .compute_anticipation_point(&outcome)
         .unwrap();
@@ -76,7 +76,7 @@ fn bench_verify_adaptor(c: &mut Criterion) {
 
     let crypto_utils_engine = MyCryptoUtils::new(&oracle_pk, &oracle_nonce);
 
-    let outcome = OutcomeU32::from(5);
+    let outcome = OutcomeU32::from(1_048_570);
     let cet_str = fun::create_cet(400, 1000);
     let msg = fun::create_message(&cet_str).unwrap();
     let atp_point = crypto_utils_engine
@@ -100,5 +100,6 @@ criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10000);
     targets = bench_create_cet, bench_create_message, bench_compute_anticipation_point, bench_pre_sign, bench_verify_adaptor
+    // targets = bench_compute_anticipation_point
 }
 criterion_main!(benches);
