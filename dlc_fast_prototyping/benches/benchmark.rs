@@ -1,7 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use secp256k1_zkp::{
-    global::SECP256K1, rand::thread_rng, EcdsaAdaptorSignature, Keypair, SecretKey,
+    global::SECP256K1, rand::thread_rng, EcdsaAdaptorSignature, Keypair,
+    SchnorrAdaptorPreSignature, SecretKey,
 };
 
 use k256::schnorr::{
@@ -174,6 +175,29 @@ fn bench_secp256k1_zkp_ecdsa_presign(c: &mut Criterion) {
     });
 }
 
+fn bench_secp256k1_zkp_schnorr_presign(c: &mut Criterion) {
+    let mut rng = thread_rng();
+    let signing_keypair = Keypair::new(SECP256K1, &mut rng);
+    let secret_key = signing_keypair.secret_key();
+    let attestation = SecretKey::new(&mut rand::thread_rng());
+    let anticipation_point = attestation.public_key(&SECP256K1);
+
+    let mut buf = [0u8; 32];
+    thread_rng().fill_bytes(&mut buf);
+    let msg = secp256k1_zkp::Message::from_digest_slice(&buf).unwrap();
+
+    c.bench_function("secp256k1_zkp_schnorr_presign", |b| {
+        b.iter(|| {
+            let schnorr_pre_signature = black_box(SchnorrAdaptorPreSignature::presign(
+                SECP256K1,
+                &msg,
+                &signing_keypair,
+                &anticipation_point,
+            ));
+        })
+    });
+}
+
 // -------------------------------------------  Key serialization and deserialization -------------------------------------------
 
 fn bench_secp256k1_zkp_key_serialize(c: &mut Criterion) {
@@ -290,7 +314,7 @@ fn bench_schnorr_adaptor_signature_clone(c: &mut Criterion) {
     });
 }
 
-// -------------------------------------------  Create message -------------------------------------------
+// -------------------------------------------  Auxiliary benchmarks -------------------------------------------
 
 fn bench_create_message(c: &mut Criterion) {
     c.bench_function("create_message", |b| {
@@ -302,14 +326,41 @@ fn bench_create_message(c: &mut Criterion) {
     });
 }
 
+fn bench_create_keypair_from_sk(c: &mut Criterion) {
+    let secret_key = SecretKey::new(&mut rand::thread_rng());
+    c.bench_function("create_keypair_from_sk", |b| {
+        b.iter(|| {
+            let keypair = Keypair::from_secret_key(SECP256K1, &secret_key);
+        })
+    });
+}
+
+fn bench_create_sk_from_keypair(c: &mut Criterion) {
+    let keypair = Keypair::new(SECP256K1, &mut thread_rng());
+    c.bench_function("create_sk_from_keypair", |b| {
+        b.iter(|| {
+            let secret_key = keypair.secret_key();
+        })
+    });
+}
+
+fn bench_clone_keypair(c: &mut Criterion) {
+    let keypair = Keypair::new(SECP256K1, &mut thread_rng());
+    c.bench_function("clone_keypair", |b| {
+        b.iter(|| {
+            let _ = black_box(keypair.clone());
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
-    config = Criterion::default().sample_size(10000);
+    config = Criterion::default().sample_size(100000);
     // targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
-    // targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign
+    targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign, bench_secp256k1_zkp_schnorr_presign
     // targets = bench_secp256k1_zkp_key_serialize, bench_secp256k1_zkp_key_deserialize, bench_k256_key_serialize, bench_k256_key_deserialize, bench_schnorr_fun_key_serialize, bench_schnorr_fun_key_deserialize
     // targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
-    targets = bench_create_message
+    // targets = bench_create_message, bench_create_keypair_from_sk, bench_create_sk_from_keypair, bench_clone_keypair
 }
 criterion_main!(benches);
 
