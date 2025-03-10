@@ -1,4 +1,4 @@
-use secp256k1_zkp::{PublicKey, SecretKey, SECP256K1};
+use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 
 use crate::common::constants::MAX_OUTCOME;
 use crate::common::runparams::{MyParser, MySignature};
@@ -34,7 +34,7 @@ where
 {
     name: String,
     oracle: Arc<O>,
-    private_key: SecretKey,
+    keypair: Keypair,
     storage: SimpleArrayStorage<ASigS>,
     parsed_contract: ParsedContract<OutcomeU32>,
 
@@ -55,7 +55,7 @@ where
     O: Oracle,
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
-        let private_key = SecretKey::new(&mut rand::thread_rng());
+        let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
         let storage = SimpleArrayStorage::new(MAX_OUTCOME as usize);
         let parsed_contract = ParsedContract::new();
         let cp_verification_key =
@@ -72,7 +72,7 @@ where
         Self {
             name: name.to_string(),
             oracle,
-            private_key,
+            keypair,
             storage,
             parsed_contract,
             cp_verification_key,
@@ -97,8 +97,8 @@ where
         // create cet -> atp point -> adaptor sig -> storage element
         let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &self.parsed_contract,
-            200000000,
-            &self.private_key,
+            MAX_OUTCOME,
+            &self.keypair,
             &event_anncmt.public_key,
             &event_anncmt.public_nonce,
         );
@@ -111,7 +111,7 @@ where
     }
 
     fn share_verification_key(&self) -> PublicKey {
-        self.private_key.public_key(secp256k1_zkp::SECP256K1)
+        self.keypair.public_key()
     }
 
     fn share_adaptors(&self) -> Vec<ASigS::AdaptorSignature> {
@@ -168,9 +168,9 @@ where
         let msg = common::fun::create_message(outcome_element.cet.as_bytes()).unwrap();
 
         #[cfg(feature = "ecdsa")]
-        let my_sig = self.private_key.sign_ecdsa(msg);
+        let my_sig = self.keypair.secret_key().sign_ecdsa(msg);
         #[cfg(feature = "schnorr")]
-        let my_sig = self.private_key.keypair(SECP256K1).sign_schnorr(msg);
+        let my_sig = self.keypair.sign_schnorr(msg);
 
         let cp_sig = ASigS::adapt(
             &outcome_element.cp_adaptor_signature.unwrap(),

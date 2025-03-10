@@ -32,3 +32,7 @@ Spravili sme prvu verziu parsera, aj paralelnu aj seriovu. Zatial bez nejakych e
 Pozn.: teoreticky, mozno v buducnosti uvidime, ze ak vstup bude komplikovanejsi, tak mozno bude parsovanie trvat dlhsie. Avsak, aktualne je ten cas tak velmi kratky, ze si nemyslim, ze aj keby bol vstup komplexnejsi a vacsi a komplikovanejsi, tak ze to bude mat nejaky razantny dopad na runtime parsovania.
 
 ![alt text](images/image.png)
+
+Spravili sme update AdaptorSignatureScheme, a dostali sme skoro dvojnasobne zrychlenie. Nejake milisekundy navyse ze to nedava presne polovicu casu mozu byt sposobene tym, ze sa tam pocita aj atp_point. 
+
+![alt text](images/schnorr-keypair-update.png)

@@ -369,7 +369,7 @@ criterion_group! {
     // targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign, bench_secp256k1_zkp_schnorr_presign
     // targets = bench_secp256k1_zkp_key_serialize, bench_secp256k1_zkp_key_deserialize, bench_k256_key_serialize, bench_k256_key_deserialize, bench_schnorr_fun_key_serialize, bench_schnorr_fun_key_deserialize
     // targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
-    targets =/* bench_create_message, bench_create_keypair_from_sk, bench_create_sk_from_keypair, bench_clone_keypair, */bench_xonly_pubkey
+    targets = bench_create_message, bench_create_keypair_from_sk, bench_create_sk_from_keypair, bench_clone_keypair, bench_xonly_pubkey
 }
 criterion_main!(benches);
 

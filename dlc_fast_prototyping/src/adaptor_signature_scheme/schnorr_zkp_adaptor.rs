@@ -2,7 +2,7 @@
 
 use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types};
 use secp256k1_zkp::{
-    schnorr, Message, PublicKey, SchnorrAdaptorPreSignature, SecretKey, SECP256K1,
+    schnorr, Keypair, Message, PublicKey, SchnorrAdaptorPreSignature, SecretKey, SECP256K1,
 };
 
 pub struct SchnorrAdaptorSignatureScheme;
@@ -12,16 +12,11 @@ impl AdaptorSignatureScheme for SchnorrAdaptorSignatureScheme {
     type Signature = schnorr::Signature;
 
     fn pre_sign(
-        signing_key: &SecretKey,
+        signing_keypair: &Keypair,
         message: &Message,
         anticipation_point: &PublicKey,
     ) -> Self::AdaptorSignature {
-        SchnorrAdaptorPreSignature::presign(
-            SECP256K1,
-            message,
-            &signing_key.keypair(SECP256K1),
-            anticipation_point,
-        )
+        SchnorrAdaptorPreSignature::presign(SECP256K1, message, signing_keypair, anticipation_point)
     }
 
     fn pre_verify(

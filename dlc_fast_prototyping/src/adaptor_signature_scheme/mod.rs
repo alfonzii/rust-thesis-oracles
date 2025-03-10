@@ -1,13 +1,13 @@
 // src/adaptor_signature_scheme/mod.rs
 
-use secp256k1_zkp::{Message, PublicKey, SecretKey};
+use secp256k1_zkp::{Keypair, Message, PublicKey, SecretKey};
 
 pub trait AdaptorSignatureScheme {
     type AdaptorSignature: Clone;
     type Signature;
 
     fn pre_sign(
-        signing_key: &SecretKey,
+        signing_keypair: &Keypair,
         message: &Message,
         anticipation_point: &PublicKey,
     ) -> Self::AdaptorSignature;

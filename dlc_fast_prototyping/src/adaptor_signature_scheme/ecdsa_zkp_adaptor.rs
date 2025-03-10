@@ -2,7 +2,8 @@
 use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, common::types};
 
 use secp256k1_zkp::{
-    ecdsa, rand::thread_rng, EcdsaAdaptorSignature, Message, PublicKey, SecretKey, SECP256K1,
+    ecdsa, rand::thread_rng, EcdsaAdaptorSignature, Keypair, Message, PublicKey, SecretKey,
+    SECP256K1,
 };
 
 pub struct EcdsaAdaptorSignatureScheme;
@@ -14,7 +15,7 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
     type Signature = ecdsa::Signature;
 
     fn pre_sign(
-        signing_key: &SecretKey,
+        signing_keypair: &Keypair,
         message: &Message,
         anticipation_point: &PublicKey,
     ) -> Self::AdaptorSignature {
@@ -22,7 +23,7 @@ impl AdaptorSignatureScheme for EcdsaAdaptorSignatureScheme {
         EcdsaAdaptorSignature::encrypt_with_rng(
             SECP256K1,
             message,
-            signing_key,
+            &signing_keypair.secret_key(),
             anticipation_point,
             &mut rng,
         )

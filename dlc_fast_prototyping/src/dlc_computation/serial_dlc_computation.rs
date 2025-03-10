@@ -1,6 +1,6 @@
 // src/dlc_computation/serial_dlc_computation.rs
 
-use secp256k1_zkp::{PublicKey, SecretKey};
+use secp256k1_zkp::{Keypair, PublicKey, SecretKey};
 
 use crate::{
     adaptor_signature_scheme::AdaptorSignatureScheme,
@@ -39,7 +39,7 @@ where
     fn compute_storage_elements_vec(
         parsed_contract: &types::ParsedContract<OutcomeU32>,
         total_collateral: u32,
-        signing_key: &SecretKey,
+        signing_keypair: &Keypair,
         oracle_public_key: &PublicKey,
         oracle_public_nonce: &PublicKey,
     ) -> Vec<StorageElement<ASigS>> {
@@ -60,7 +60,7 @@ where
                 .unwrap();
 
             // Compute my adaptor signature
-            let my_adaptor = ASigS::pre_sign(signing_key, &msg, &atp_point);
+            let my_adaptor = ASigS::pre_sign(signing_keypair, &msg, &atp_point);
 
             let storage_element = Self::create_storage_element(cet_str, atp_point, my_adaptor);
             storage_elements_vec.push(storage_element);

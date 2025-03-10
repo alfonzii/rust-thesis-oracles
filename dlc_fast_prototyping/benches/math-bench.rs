@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dlc_fast_prototyping::common::runparams::{MyAdaptorSignatureScheme, MyCryptoUtils};
 use rand::thread_rng;
-use secp256k1_zkp::Secp256k1;
+use secp256k1_zkp::{Keypair, Secp256k1};
 
 // Import necessary types and functions
 use dlc_fast_prototyping::adaptor_signature_scheme::AdaptorSignatureScheme;
@@ -46,7 +46,7 @@ fn bench_compute_anticipation_point(c: &mut Criterion) {
 
 fn bench_pre_sign(c: &mut Criterion) {
     let secp = Secp256k1::new();
-    let (signing_sk, _signing_pk) = secp.generate_keypair(&mut thread_rng());
+    let keypair = Keypair::new(&secp, &mut thread_rng());
     let cet_str = "Alice gets 600 sats and Bob gets 400 sats".to_string();
     let msg = fun::create_message(&cet_str).unwrap();
     // For anticipation point, generate dummy keys:
@@ -59,7 +59,7 @@ fn bench_pre_sign(c: &mut Criterion) {
         .unwrap();
     c.bench_function("pre_sign", |b| {
         b.iter(|| {
-            let _ = MyAdaptorSignatureScheme::pre_sign(&signing_sk, &msg, &atp_point);
+            let _ = MyAdaptorSignatureScheme::pre_sign(&keypair, &msg, &atp_point);
         })
     });
 }
@@ -70,7 +70,7 @@ fn bench_verify_adaptor(c: &mut Criterion) {
     use secp256k1_zkp::Secp256k1;
 
     let secp = Secp256k1::new();
-    let (signing_sk, signing_pk) = secp.generate_keypair(&mut thread_rng());
+    let keypair = Keypair::new(&secp, &mut thread_rng());
     let (_, oracle_pk) = secp.generate_keypair(&mut thread_rng());
     let (_, oracle_nonce) = secp.generate_keypair(&mut thread_rng());
 
@@ -83,11 +83,11 @@ fn bench_verify_adaptor(c: &mut Criterion) {
         .compute_anticipation_point(&outcome)
         .unwrap();
 
-    let adaptor_sig = MyAdaptorSignatureScheme::pre_sign(&signing_sk, &msg, &atp_point);
+    let adaptor_sig = MyAdaptorSignatureScheme::pre_sign(&keypair, &msg, &atp_point);
     c.bench_function("verify_adaptor_sig", |b| {
         b.iter(|| {
             let _check = black_box(MyAdaptorSignatureScheme::pre_verify(
-                &signing_pk,
+                &keypair.public_key(),
                 &msg,
                 &atp_point,
                 &adaptor_sig,

@@ -1,6 +1,6 @@
 // src/dlc_computation/mod.rs
 
-use secp256k1_zkp::{PublicKey, SecretKey};
+use secp256k1_zkp::{Keypair, PublicKey, SecretKey};
 
 use crate::{
     adaptor_signature_scheme::AdaptorSignatureScheme, common::types, crypto_utils::CryptoUtils,
@@ -19,7 +19,7 @@ where
         // a my vlastne tak nejak tusime, aky velky ma byy ten vektor. bud velkosti Buff ktory vracia parser, alebo velkosti "nb_outcomes"
         parsed_contract: &types::ParsedContract<Out>,
         total_collateral: u32,
-        signing_key: &SecretKey,
+        signing_keypair: &Keypair,
         oracle_public_key: &PublicKey,
         oracle_public_nonce: &PublicKey,
     ) -> Vec<StorageElement<ASigS>>;

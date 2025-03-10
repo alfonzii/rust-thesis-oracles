@@ -22,7 +22,7 @@ pub type MySignature = secp256k1_zkp::schnorr::Signature;
 // Change following types to test different approaches to DLC
 pub type MyCryptoUtils = BasisCryptoUtils;
 pub type MyOracle = RandIntOracle<MyCryptoUtils>;
-pub type MyParser = SimpleU32Parser;
+pub type MyParser = MockU32Parser;
 
 //type MyDlcController = .... -> spravit nejaky typ podobne ako MyOracle
 

@@ -240,7 +240,7 @@ mod tests {
 
     use super::*;
     use rand::thread_rng;
-    use secp256k1_zkp::{Message, Secp256k1};
+    use secp256k1_zkp::{Keypair, Message, Secp256k1};
     use sha2::{Digest, Sha256};
 
     #[test]
@@ -267,12 +267,12 @@ mod tests {
         let mut rng = thread_rng();
 
         // Generate signer keypair
-        let (signer_sk, signer_pk) = secp.generate_keypair(&mut rng);
+        let keypair = Keypair::new(&secp, &mut rng);
         // Generate nonce keypair (for anticipation point / attestation)
         let (nonce_sk, nonce_pk) = secp.generate_keypair(&mut rng);
 
         // Create SimpleCryptoUtils engine
-        let crypto_utils_engine = MyCryptoUtils::new(&signer_pk, &nonce_pk);
+        let crypto_utils_engine = MyCryptoUtils::new(&keypair.public_key(), &nonce_pk);
 
         // Create message
         let message_str = "Adaptor signature test";
@@ -290,10 +290,10 @@ mod tests {
 
         // Create adaptor signature and verify pre-adaptation
         let adaptor_sig =
-            EcdsaAdaptorSignatureScheme::pre_sign(&signer_sk, &msg, &anticipation_point);
+            EcdsaAdaptorSignatureScheme::pre_sign(&keypair, &msg, &anticipation_point);
         assert!(
             EcdsaAdaptorSignatureScheme::pre_verify(
-                &signer_pk,
+                &keypair.public_key(),
                 &msg,
                 &anticipation_point,
                 &adaptor_sig
@@ -303,13 +303,14 @@ mod tests {
 
         // Compute attestation using SimpleCryptoUtils (using nonce_sk as private nonce)
         let attestation = crypto_utils_engine
-            .compute_attestation(&signer_sk, &nonce_sk, &outcome)
+            .compute_attestation(&keypair.secret_key(), &nonce_sk, &outcome)
             .expect("Failed to compute attestation");
 
         // Adapt the adaptor signature using computed attestation and verify signature
         let adapted_sig = EcdsaAdaptorSignatureScheme::adapt(&adaptor_sig, &attestation);
         assert!(
-            secp.verify_ecdsa(&msg, &adapted_sig, &signer_pk).is_ok(),
+            secp.verify_ecdsa(&msg, &adapted_sig, &keypair.public_key())
+                .is_ok(),
             "Adapted signature verification failed"
         );
 
