@@ -353,14 +353,23 @@ fn bench_clone_keypair(c: &mut Criterion) {
     });
 }
 
+fn bench_xonly_pubkey(c: &mut Criterion) {
+    let keypair = Keypair::new(SECP256K1, &mut thread_rng());
+    c.bench_function("xonly_pubkey", |b| {
+        b.iter(|| {
+            let _ = black_box(keypair.x_only_public_key().0);
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(100000);
     // targets = bench_secp256k1_zkp_sign, bench_secp256k1_zkp_verify, bench_k256_sign, bench_k256_verify, bench_schnorr_fun_sign, bench_schnorr_fun_verify
-    targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign, bench_secp256k1_zkp_schnorr_presign
+    // targets = bench_schnorr_fun_presign, bench_secp256k1_zkp_ecdsa_presign, bench_secp256k1_zkp_schnorr_presign
     // targets = bench_secp256k1_zkp_key_serialize, bench_secp256k1_zkp_key_deserialize, bench_k256_key_serialize, bench_k256_key_deserialize, bench_schnorr_fun_key_serialize, bench_schnorr_fun_key_deserialize
     // targets = bench_ecdsa_adaptor_signature_clone, bench_schnorr_adaptor_signature_clone
-    // targets = bench_create_message, bench_create_keypair_from_sk, bench_create_sk_from_keypair, bench_clone_keypair
+    targets =/* bench_create_message, bench_create_keypair_from_sk, bench_create_sk_from_keypair, bench_clone_keypair, */bench_xonly_pubkey
 }
 criterion_main!(benches);
 
