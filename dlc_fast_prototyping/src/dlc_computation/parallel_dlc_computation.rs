@@ -3,7 +3,7 @@
 use rayon::prelude::*;
 use std::marker::PhantomData; // for parallel iterators
 
-use secp256k1_zkp::PublicKey;
+use secp256k1_zkp::{PublicKey, SecretKey};
 
 use crate::{
     adaptor_signature_scheme::AdaptorSignatureScheme,
@@ -40,9 +40,9 @@ where
     ASigS::AdaptorSignature: Send + Sync,
 {
     fn compute_storage_elements_vec(
-        contract_descriptor: &types::ContractDescriptor<types::OutcomeU32>,
+        parsed_contract: &types::ParsedContract<types::OutcomeU32>,
         total_collateral: u32,
-        signing_key: &secp256k1_zkp::SecretKey,
+        signing_key: &SecretKey,
         oracle_public_key: &PublicKey,
         oracle_public_nonce: &PublicKey,
     ) -> Vec<StorageElement<ASigS>> {
@@ -50,7 +50,7 @@ where
         let crypto_utils_engine = CU::new(oracle_public_key, oracle_public_nonce);
 
         // Use parallel iteration:
-        contract_descriptor
+        parsed_contract
             .par_iter() // creates a parallel iterator
             .map(|(outcome, payout)| {
                 // 1. Create CET (string or whatever you do)

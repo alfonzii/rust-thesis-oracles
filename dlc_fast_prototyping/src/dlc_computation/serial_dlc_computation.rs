@@ -37,17 +37,17 @@ where
     CU: CryptoUtils,
 {
     fn compute_storage_elements_vec(
-        contract_descriptor: &types::ContractDescriptor<OutcomeU32>,
+        parsed_contract: &types::ParsedContract<OutcomeU32>,
         total_collateral: u32,
         signing_key: &SecretKey,
         oracle_public_key: &PublicKey,
         oracle_public_nonce: &PublicKey,
     ) -> Vec<StorageElement<ASigS>> {
-        let mut storage_elements_vec = Vec::with_capacity(contract_descriptor.len());
+        let mut storage_elements_vec = Vec::with_capacity(parsed_contract.len());
 
         let crypto_utils_engine = CU::new(oracle_public_key, oracle_public_nonce);
 
-        for (outcome, payout) in contract_descriptor.iter() {
+        for (outcome, payout) in parsed_contract.iter() {
             // Create CET from the contract descriptor element
             let cet_str = common::fun::create_cet(*payout, total_collateral); // TODO: toto by malo asi byt nejak inak, nie ze create_cet a vytvorim string. cely tento create cet koncept by mal byt spraveny obecne. je jedno ci je CET string alebo btc tx. malo by to vsetko fungovat
 

@@ -20,7 +20,7 @@ where
     fn new(name: &str, oracle: Arc<O>) -> Self;
 
     /// Loads DLC input from a file.
-    fn load_input(&self, input_path: &str) -> Result<(), Error>;
+    fn load_input(&mut self, input_path: &str) -> Result<(), Error>;
 
     /// Initializes all necessary storage structures before use.
     fn init_storage(&mut self) -> Result<(), Error>;

@@ -1,8 +1,8 @@
 use secp256k1_zkp::{PublicKey, SecretKey, SECP256K1};
 
 use crate::common::constants::MAX_OUTCOME;
-use crate::common::runparams::MySignature;
-use crate::common::{self, types, ContractDescriptor, Outcome, OutcomeU32};
+use crate::common::runparams::{MyParser, MySignature};
+use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
 use crate::crypto_utils::CryptoUtils;
 use crate::dlc_computation::parallel_dlc_computation::ParallelDlcComputation;
 use crate::dlc_computation::serial_dlc_computation::SerialDlcComputation;
@@ -10,6 +10,7 @@ use crate::dlc_computation::DlcComputation;
 use crate::dlc_storage::simple_array_storage::SimpleArrayStorage;
 use crate::dlc_storage::DlcStorage;
 use crate::oracle::{Oracle, OracleAttestation};
+use crate::parser::Parser;
 use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, dlc_controller::DlcController};
 
 use secp256k1_zkp::rand;
@@ -35,6 +36,7 @@ where
     oracle: Arc<O>,
     private_key: SecretKey,
     storage: SimpleArrayStorage<ASigS>,
+    parsed_contract: ParsedContract<OutcomeU32>,
 
     cp_verification_key: PublicKey,
     cp_adaptors: Vec<ASigS::AdaptorSignature>,
@@ -55,6 +57,7 @@ where
     fn new(name: &str, oracle: Arc<O>) -> Self {
         let private_key = SecretKey::new(&mut rand::thread_rng());
         let storage = SimpleArrayStorage::new(MAX_OUTCOME as usize);
+        let parsed_contract = ParsedContract::new();
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
                 .unwrap()
@@ -71,6 +74,7 @@ where
             oracle,
             private_key,
             storage,
+            parsed_contract,
             cp_verification_key,
             cp_adaptors,
             oracle_attestation,
@@ -80,33 +84,28 @@ where
         }
     }
 
-    fn load_input(&self, _input_path: &str) -> Result<(), Error> {
-        Ok(()) // TODO: Implement this
+    fn load_input(&mut self, _input_path: &str) -> Result<(), Error> {
+        self.parsed_contract = MyParser::parse_input(_input_path)?;
+        Ok(())
     }
 
     fn init_storage(&mut self) -> Result<(), Error> {
-        // TODO: Hardcoded ContractDescriptor with pairs (x,x). In normal scenario, this would be parsed from a file input
-        // Create ContractDescriptor
-        let cd: ContractDescriptor<OutcomeU32> = (0..=MAX_OUTCOME - 1)
-            .map(|i| (OutcomeU32::from(i), i))
-            .collect();
-
         // Get (announcement) public key, public nonces and next attestation time from the oracle
         let event_anncmt = self.oracle.get_event_announcement(0);
 
         // Compute storage elements vector for all outcomes
         // create cet -> atp point -> adaptor sig -> storage element
         let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
-            &cd,
-            MAX_OUTCOME - 1,
+            &self.parsed_contract,
+            200000000,
             &self.private_key,
             &event_anncmt.public_key,
             &event_anncmt.public_nonce,
         );
 
         // Put all elements into storage
-        for ((outcome, _), element) in cd.into_iter().zip(storage_elements_vec) {
-            self.storage.put_element(&outcome, element)?;
+        for ((outcome, _), element) in self.parsed_contract.iter().zip(storage_elements_vec) {
+            self.storage.put_element(outcome, element)?;
         }
         Ok(())
     }

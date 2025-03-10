@@ -3,6 +3,7 @@
 use secp256k1_zkp;
 // use secp256k1_zkp::PublicKey as SecpPublicKey;
 use secp256k1_zkp::{PublicKey, SecretKey};
+use serde::{Deserialize, Serialize};
 
 /// -- Aliases for outcome types --
 pub type AnticipationPoint = PublicKey;
@@ -10,7 +11,8 @@ pub type Attestation = SecretKey;
 
 // Other
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)
-pub type ContractDescriptor<O: Outcome> = Vec<(O, u32)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
+pub type ParsedContract<O: Outcome> = Vec<(O, u32)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
+                                                     // TODO: za predpokladu, ze ParsedContract bude obsahovat len OutcomeU32, tak by to mohol byt iba Vec<u32>
 
 /// The final Bitcoin transaction or any other on-chain transaction type
 /// that will be broadcasted after finalization.
@@ -143,6 +145,49 @@ impl From<OutcomeBinStr> for String {
     fn from(outcome: OutcomeBinStr) -> Self {
         outcome.value
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContractInput {
+    pub offer_collateral: u64,  // Amount (btc cargo)
+    pub accept_collateral: u64, // Amount (btc cargo)
+    pub fee_rate: u64,
+    pub contract_info: ContractInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContractInfo {
+    pub contract_descriptor: ContractDescriptor,
+    pub oracle: OracleInput,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContractDescriptor {
+    pub payout_intervals: Vec<PayoutInterval>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayoutInterval {
+    pub payout_points: Vec<PayoutPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayoutPoint {
+    pub event_outcome: u32,
+    pub outcome_payout: u32, // Amount (btc cargo)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OracleInput {
+    pub public_key: PublicKey,
+    pub event_id: String,
+    pub nb_digits: u8, // TODO: asi potom tiez prerobit na usize
 }
 
 // TODO: written here but applies to whole project! might think about if renaming isnt needed. we are using whole names like public_key, private_key... maybe using just priv_key and pub_key would be enough and more readable.

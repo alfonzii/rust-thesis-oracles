@@ -18,6 +18,7 @@ mod dlc_computation;
 mod dlc_controller;
 mod dlc_storage;
 mod oracle;
+mod parser;
 
 // TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
 // alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
@@ -139,13 +140,13 @@ fn main() {
 
     // Create controllers
     let mut controller_alice =
-        bench::measure_step("Construct Alice controller", &mut steps, || {
+        bench::measure_step("Construct controller (Alice)", &mut steps, || {
             VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
                 ALICE,
                 Arc::clone(&oracle),
             )
         });
-    let mut controller_bob = bench::measure_step("Construct Bob controller", &mut steps, || {
+    let mut controller_bob = bench::measure_step("Construct controller (Bob)", &mut steps, || {
         VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
             BOB,
             Arc::clone(&oracle),
@@ -155,12 +156,12 @@ fn main() {
     // Load input files
     bench::measure_step("Load input (Alice)", &mut steps, || {
         controller_alice
-            .load_input("some/path/to/input/file")
+            .load_input("numerical_contract_input.json")
             .unwrap();
     });
     bench::measure_step("Load input (Bob)", &mut steps, || {
         controller_bob
-            .load_input("some/path/to/input/file")
+            .load_input("numerical_contract_input.json")
             .unwrap();
     });
 

@@ -17,7 +17,7 @@ where
     fn compute_storage_elements_vec(
         // TODO: dat sem mozno niekde nb_outcomes, lebo pri pushovani do vec storageelement budeme realokovat
         // a my vlastne tak nejak tusime, aky velky ma byy ten vektor. bud velkosti Buff ktory vracia parser, alebo velkosti "nb_outcomes"
-        contract_descriptor: &types::ContractDescriptor<Out>,
+        parsed_contract: &types::ParsedContract<Out>,
         total_collateral: u32,
         signing_key: &SecretKey,
         oracle_public_key: &PublicKey,
