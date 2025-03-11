@@ -6,4 +6,4 @@ pub trait Parser<Out: types::Outcome> {
 }
 
 pub mod parser_mock;
-pub mod parser_u32;
+// pub mod parser_out_u32;

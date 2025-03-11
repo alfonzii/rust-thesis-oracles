@@ -96,7 +96,7 @@ where
         // create cet -> atp point -> adaptor sig -> storage element
         let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &self.parsed_contract,
-            MAX_OUTCOME,
+            MAX_OUTCOME.into(),
             &self.keypair,
             &event_anncmt.public_key,
             &event_anncmt.public_nonce,

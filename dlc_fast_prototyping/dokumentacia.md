@@ -51,3 +51,5 @@ Spravili sme update AdaptorSignatureScheme, a dostali sme skoro dvojnasobne zryc
 Dlc_computation tak ako aj ine moduly sme spravili povodne modularne aby prostredie bolo rozsiritelne o ine implementacie. Povodne sme mali 2 rozne, parallel a serial, ale kvoli zbytocnej duplicite kodu sme zvolili riesenie take, ze sme tieto dva zjednotili do jedneho a iba kompilacny flag s pouzitim cfg feature rozhodne, ci sa pouzije seriovy alebo paralelny vypocet atp_points a adaptor_signatures.
 
 Pozn.: pravdepodobne feature `parallel` nazveme nejak inak, kvoli tomu, ze parser mame tiez paralelny a ten je ale pomalsi nez seriovy, takze to nechceme spustat obe naraz.
+
+-zmena payout na u64, aby sme vedeli davat vyssie hodnoty nez 40BTC

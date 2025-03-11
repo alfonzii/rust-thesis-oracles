@@ -6,9 +6,9 @@ use rayon::prelude::*;
 use std::fs;
 use std::io::Error;
 
-pub struct SimpleU32Parser;
+pub struct SimpleOutU32Parser;
 
-impl SimpleU32Parser {
+impl SimpleOutU32Parser {
     // Creates a Vec of length `len` where v[i] = init + i*inc
 
     // Serial version in standard Rust:
@@ -63,7 +63,7 @@ impl SimpleU32Parser {
     }
 }
 
-impl Parser<types::OutcomeU32> for SimpleU32Parser {
+impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
     fn parse_input(contract_path: &str) -> Result<ParsedContract<types::OutcomeU32>, Error> {
         // Read file into string
         let contract_input_str =
