@@ -4,8 +4,7 @@ use crate::common::constants::MAX_OUTCOME;
 use crate::common::runparams::{MyParser, MySignature};
 use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
 use crate::crypto_utils::CryptoUtils;
-use crate::dlc_computation::parallel_dlc_computation::ParallelDlcComputation;
-use crate::dlc_computation::serial_dlc_computation::SerialDlcComputation;
+use crate::dlc_computation::unified_dlc_computation::UnifiedDlcComputation;
 use crate::dlc_computation::DlcComputation;
 use crate::dlc_storage::simple_array_storage::SimpleArrayStorage;
 use crate::dlc_storage::DlcStorage;
@@ -24,7 +23,7 @@ use std::u32::MAX;
 // Not using those yet. Lets see in future, how will different controllers be programmed and how will
 // this change. Not sure, if we actually want to allow changing of Storage and Computation for concrete controller implementations.
 type MyDlcStorage<T> = SimpleArrayStorage<T>;
-type MyDlcComputation<A, C> = ParallelDlcComputation<A, C>;
+type MyDlcComputation<A, C> = UnifiedDlcComputation<A, C>;
 
 pub struct VerySimpleController<ASigS, CU, O>
 where
