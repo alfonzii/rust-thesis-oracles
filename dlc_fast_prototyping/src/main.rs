@@ -156,12 +156,12 @@ fn main() {
     // Load input files
     bench::measure_step("Load input (Alice)", &mut steps, || {
         controller_alice
-            .load_input("numerical_contract_input.json")
+            .load_input("./contract_samples/simple_contract_input.json")
             .unwrap();
     });
     bench::measure_step("Load input (Bob)", &mut steps, || {
         controller_bob
-            .load_input("numerical_contract_input.json")
+            .load_input("./contract_samples/simple_contract_input.json")
             .unwrap();
     });
 

@@ -1,6 +1,6 @@
 use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 
-use crate::common::constants::MAX_OUTCOME;
+use crate::common::constants::{MAX_OUTCOME, TOTAL_COLLATERAL};
 use crate::common::runparams::{MyParser, MySignature};
 use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
 use crate::crypto_utils::CryptoUtils;
@@ -96,7 +96,7 @@ where
         // create cet -> atp point -> adaptor sig -> storage element
         let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &self.parsed_contract,
-            MAX_OUTCOME.into(),
+            TOTAL_COLLATERAL,
             &self.keypair,
             &event_anncmt.public_key,
             &event_anncmt.public_nonce,

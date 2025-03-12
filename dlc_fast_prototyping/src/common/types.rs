@@ -11,8 +11,9 @@ pub type Attestation = SecretKey;
 
 // Other
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)
-pub type ParsedContract<O: Outcome> = Vec<(O, u64)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
-                                                     // TODO: za predpokladu, ze ParsedContract bude obsahovat len OutcomeU32, tak by to mohol byt iba Vec<u32>
+pub type PayoutT = u64; // Integer type for payout values (in satoshis). If will be using Bitcoin API, then Amount will be correct type
+pub type ParsedContract<O: Outcome> = Vec<(O, PayoutT)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
+                                                         // TODO: za predpokladu, ze ParsedContract bude obsahovat len OutcomeU32, tak by to mohol byt iba Vec<u32>
 
 /// The final Bitcoin transaction or any other on-chain transaction type
 /// that will be broadcasted after finalization.
@@ -46,6 +47,7 @@ impl MultisigFundAddress {
     }
 }
 
+// ------------------ Outcome trait and implementations ------------------
 pub trait Outcome {
     type ValueType;
 
@@ -147,6 +149,8 @@ impl From<OutcomeBinStr> for String {
     }
 }
 
+// ------------------ ContractInput and related structs ------------------
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContractInput {
@@ -179,7 +183,7 @@ pub struct PayoutInterval {
 #[serde(rename_all = "camelCase")]
 pub struct PayoutPoint {
     pub event_outcome: u32,
-    pub outcome_payout: u64, // Amount (btc cargo)
+    pub outcome_payout: PayoutT, // Amount (btc cargo)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

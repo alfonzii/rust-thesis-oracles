@@ -53,3 +53,21 @@ Dlc_computation tak ako aj ine moduly sme spravili povodne modularne aby prostre
 Pozn.: pravdepodobne feature `parallel` nazveme nejak inak, kvoli tomu, ze parser mame tiez paralelny a ten je ale pomalsi nez seriovy, takze to nechceme spustat obe naraz.
 
 -zmena payout na u64, aby sme vedeli davat vyssie hodnoty nez 40BTC
+argumentacia k tomu, preco ktore premenne alebo konstanty mame s nejakymi ciselnymi specifickymi typmi tak je na papieri. (modra hviezdicka)
+
+K `diff` v `parser_out_u32.rs` trochu diskusie. Kedze mooze byt end_payout nizsi ako start_payout (mame klesajuci interval), moze nam vzniknut diff ktory bude zaporny v ramci intervalu. To je vsak vporiadku. Akurat ze, ked urobime rozdiel dvoch unsigned cisel a vyjde nam zaporne (pretoze na reprezentaciu payout pouzivame `u64`), tak nastane overflow a mame error. Jednoduche riesenie by bolo typecastnut end a start payouty do `i64` a odratat ich od seba takto. Lenze, myslienkovym postupom dojdeme k tomu, ze co ak by `end_payout` bol z rozmedzia 2^63 - 2^64 a `start_payout` by bol z rozmedzia < 2^63. To by znamenalo, ze ak by sme toto cislo ulozili do `i64` tak dostaneme nekorektny vysledok, pretoze cisla vacsie ako 2^63 nevieme kvoli znamienku typom `i64` reprezentovat. Preto by sa nukalo riesenie pouzit `i128` a vyhnut sa tomuto problemu. Avsak, ked si uvedomime jednu dolezitu vec, tak nemusime pouzivat ani `i128` ale naozaj staci iba `i64`. To z toho dovodu, ze sice my dokazeme v `u64` reprezentovat cisla az do 2^64, tj cisla vacsie ako 2^63 (ktore ako maximalne vieme reprezentovat v `i64`), lenze v nasom kode tieto hodnoty reprezentuju payout. No a BTC moze byt maximalne 21 000 000. To je na satoshi 21 * 10^14. no a 2^63 je nieco viac nez 9 * 10^18. To znamena, ze aj "vsetky" bitcoiny sa zmestia do 2^63, cize kludne mozeme pouzit typ `i64` na diff. Technicky vacsie cislo dat by slo, ale logicky to nedava zmysel. Mozeme to akurat pripadne osetrit nejakou validaciou vstupu, ze hodnoty nad 21 M BTC budeme brat ako nevalidne.
+
+Nakoniec to teda urobime este trochu inak. `diff` dame najprv na `i64` kvoli nule a potom ho typecastneme na `f64` spolu s interval_len. Podla internetu plati toto:
+
+The maximum finite number for an IEEE 754 double‑precision (f64) is given by
+(2−2−52)×21023,
+(2−2−52)×21023,
+
+which is approximately 1.7976931348623157e308.
+
+Additionally, f64 has a 53‑bit significand (52 explicit bits plus 1 implicit bit). This corresponds to roughly 15 to 17 decimal digits of precision (typically about 15 decimal digits are reliably preserved).
+
+Cize, kedze 15 cifier dokazeme pomerne spolahlivo reprezentovat floatom 64 bit, tak je to OK, lebo 21M BTC je nieco ako 21 * 10^14 sats.
+
+Takto nam potom vznikne `step` no a step potom mozeme zaokruhlovat na najblizsi integer. Takymto sposobom dostaneme relativne rozumny linearny narast / pokles integer hodnot. Ak by `step` nebol float a nezaokruhlovali by sme, tak by bol problem s tym, ze zvysky by sa nepripocitavali a narast hodnot by potom nebol linearny. Priklad, `len` = 10, `diff` = 12. 12/10 = 1.2. Keby ze mame `step` integer, tak je to 1 a k payout 11 a 12 by sme sa ani nedostali. Ked vsak budeme zaokruhlovat float, tak to bude pomerne linearne.
+Pozn.: jediny problem robia hodnoty x.5, tam to bude vzdy trochu neferove voci jednej alebo druhej strane - podla toho, ako budeme zaokruhlovat. Je to vsak stale ferovejsie, nez nezaokruhlovat vobec a pouzivat iba integer `step`.

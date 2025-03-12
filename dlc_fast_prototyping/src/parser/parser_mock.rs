@@ -7,7 +7,7 @@ pub struct MockU32Parser;
 
 impl Parser<types::OutcomeU32> for MockU32Parser {
     fn parse_input(_contract_path: &str) -> Result<ParsedContract<types::OutcomeU32>, Error> {
-        Ok((0..=MAX_OUTCOME - 1)
+        Ok((0..=MAX_OUTCOME)
             .map(|i| (OutcomeU32::from(i), i.into()))
             .collect())
     }

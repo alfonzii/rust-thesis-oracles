@@ -15,7 +15,7 @@ where
 {
     fn compute_storage_elements_vec(
         parsed_contract: &types::ParsedContract<Out>,
-        total_collateral: u64,
+        total_collateral: types::PayoutT,
         signing_keypair: &Keypair,
         oracle_public_key: &PublicKey,
         oracle_public_nonce: &PublicKey,

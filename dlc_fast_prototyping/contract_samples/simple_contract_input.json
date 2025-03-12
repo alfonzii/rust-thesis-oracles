@@ -1,0 +1,29 @@
+{
+    "offerCollateral": 100,
+    "acceptCollateral": 100,
+    "feeRate": 2,
+    "contractInfo": 
+    {
+    "contractDescriptor": {
+        "payoutIntervals": [
+        {
+            "payoutPoints": [
+                {
+                "eventOutcome": 0,
+                "outcomePayout": 0
+                },
+                {
+                "eventOutcome": 15,
+                "outcomePayout": 200
+                }
+            ]
+        }
+        ]
+    },
+    "oracle": {
+        "publicKey": "020d829c1cc556aa59060df5a9543c5357199ace5db9bcd5a8ddd6ee2fc7b6d174",
+        "eventId": "btcusd1707120297",
+        "nbDigits": 4
+    }
+    }
+}

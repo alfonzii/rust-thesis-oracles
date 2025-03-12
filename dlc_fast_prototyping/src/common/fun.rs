@@ -3,8 +3,10 @@
 use secp256k1_zkp::Message;
 use sha2::{Digest, Sha256};
 
+use super::types;
+
 // Based on payout and total collateral (from contract descriptor), create a string that represents the CET
-pub fn create_cet(payout: u64, total_collateral: u64) -> String {
+pub fn create_cet(payout: types::PayoutT, total_collateral: types::PayoutT) -> String {
     format!(
         "Alice gets {} sats and Bob gets {} sats from DLC",
         total_collateral - payout,
