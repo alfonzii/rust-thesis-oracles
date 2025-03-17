@@ -17,10 +17,10 @@
 
 [10.3.2025]
 todo na dnes
-- (in progress) dokoncit parser - urobit ho error proof a robustny do istej miery
+- ✅ dokoncit parser - urobit ho error proof a robustny do istej miery
 - ✅ prerobit interface asigs aby brali keypair namiesto secret_key kvoli schnorr adaptor
 - spolocne s parserom bude treba pomenit typy outcomes, payouts atd tak, aby davali zmysel
-    + delenie integer si myslim ze nedava dobry increment do step pre naplnanie payoutu, takze tiez premysliet
+    + ✅ delenie integer si myslim ze nedava dobry increment do step pre naplnanie payoutu, takze tiez premysliet
     + takisto asi bude treba urobit druhu funkciu, ktora vracia len `ContractInput` pretoze max collateral a toto sa vytahuje z kontraktu a tu naparsovanu strukturu ContractInput potrebujem byt schopny pouzivat v kode
 - rozmysliet ci nechat ParsedInput ako vektor parov alebo index bude outcome a payout bude iba hodnota
 

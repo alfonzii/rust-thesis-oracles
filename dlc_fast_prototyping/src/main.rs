@@ -4,7 +4,7 @@ use std::{sync::Arc, time::Instant};
 
 use adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
 use common::{
-    constants::{ALICE, BOB, MAX_OUTCOME},
+    constants::{ALICE, BOB, CONTRACT_INPUT_PATH, MAX_OUTCOME},
     runparams::{MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle, MySignature},
     types, FinalizedTx,
 };
@@ -154,16 +154,14 @@ fn main() {
     });
 
     // Load input files
-    bench::measure_step("Load input (Alice)", &mut steps, || {
-        controller_alice
-            .load_input("./contract_samples/simple_contract_input.json")
-            .unwrap();
-    });
-    bench::measure_step("Load input (Bob)", &mut steps, || {
-        controller_bob
-            .load_input("./contract_samples/simple_contract_input.json")
-            .unwrap();
-    });
+    if let Err(e) = controller_alice.load_input(CONTRACT_INPUT_PATH) {
+        eprintln!("Error loading input (Alice): {}", e);
+        std::process::exit(1);
+    }
+    if let Err(e) = controller_bob.load_input(CONTRACT_INPUT_PATH) {
+        eprintln!("Error loading input (Bob): {}", e);
+        std::process::exit(1);
+    }
 
     // Initialize storage
     bench::measure_step("Init storage (Alice)", &mut steps, || {

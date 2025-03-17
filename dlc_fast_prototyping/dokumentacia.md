@@ -71,3 +71,36 @@ Cize, kedze 15 cifier dokazeme pomerne spolahlivo reprezentovat floatom 64 bit, 
 
 Takto nam potom vznikne `step` no a step potom mozeme zaokruhlovat na najblizsi integer. Takymto sposobom dostaneme relativne rozumny linearny narast / pokles integer hodnot. Ak by `step` nebol float a nezaokruhlovali by sme, tak by bol problem s tym, ze zvysky by sa nepripocitavali a narast hodnot by potom nebol linearny. Priklad, `len` = 10, `diff` = 12. 12/10 = 1.2. Keby ze mame `step` integer, tak je to 1 a k payout 11 a 12 by sme sa ani nedostali. Ked vsak budeme zaokruhlovat float, tak to bude pomerne linearne.
 Pozn.: jediny problem robia hodnoty x.5, tam to bude vzdy trochu neferove voci jednej alebo druhej strane - podla toho, ako budeme zaokruhlovat. Je to vsak stale ferovejsie, nez nezaokruhlovat vobec a pouzivat iba integer `step`.
+
+**[17.3.2025]**
+Parser zatial fungoval, ale bez testov a nevalidoval vstupy.
+Dorobili sme validaciu, validujeme naparsovany vstup, a takisto validujeme aj toto, ze nam padol `serde_json` na deserializacii - pre empty vstup alebo negativne hodnoty do unsigned. Vyrobili sme na to aj testy. A takisto vo volani funkcii tak ked dostaneme error, tak by sme mali byt schopny gracefully ukoncit program a vypisat error, namiesto panic (v main).
+Validacia mozno neni uplne kompletna, ale zaviedli se tam niekolko pravidiel tak, aby davali zmysel a aby odchytili aspon tie najcastejsie a evidentne problemy, ktore by mohli nastat. Prepis z pravidiel zadavanych do cahtgpt je tu:
+1. Intervals in payoutIntervals should be continuous in outcomes. It means, that at what eventOutcome one interval ends (second point of interval), following interval and its first point must start at the same eventOutcome.
+2. First point at first interval must start at zero.
+3. eventOutcome of last interval of last point should end on number 2^NB_DIGITS - 1. NB_DIGITS might be taken out from oracle.nb_digits in input, or you can take it from #file:constants.rs .
+4. outcomePayout must always be less than or equal to sum of offerCollateral and acceptCollateral.
+5. outcomePayout must always be non-negative.
+6. offerCollateral and acceptCollateral must be unsigned integers.
+7. If feeRate is bigger than 25 * 250, then it's set very high and is considered incorrect.
+8. Each of payoutIntervals should have exactly 2 points. Not more, not less.
+9. contractDescriptor should have at least one interval.
+10. Input contract as a whole should be non-empty, meaning, that every element should have some initialized and parsed value.
+11. `nb_digits` from contract should be equal to `NB_DIGITS` constant in code
+
+s tym, ze pravidlo 5. a 6. by malo byt zarucene pouzitim `unsigned` typu. Tj. failne to este pri deserializacii, ak by bola chyba.
+
+K tomu potom takisto mame vyrobene testovacie vstupy, kde kazdy by mal breakovat nejake pravidlo. Testovacie vstupy sa teraz volaju inak, ale prekopirujem sem odpoved z chatgpt ako to vyrobil on:
+
+Below is a step-by-step outline followed by 10 new JSON files, each violating exactly one rule in separate ways:
+
+1. test_noncontinuous.json – Breaks rule #1 (non-continuous intervals).
+2. test_nonzero_first_point.json – Breaks rule #2 (first point not 0).
+3. test_last_outcome_not_final.json – Breaks rule #3 (last outcome != 2^NB_DIGITS - 1).
+4. test_invalid_payout_level.json – Breaks rule #4 (payout > sum of collaterals).
+5. test_negative_payout.json – Breaks rule #5 (negative payout).
+6. test_invalid_collateral.json – Breaks rule #6 (collateral < 1).
+7. test_excessive_feerate.json – Breaks rule #7 (feeRate too high).
+8. test_invalid_interval_points.json – Breaks rule #8 (interval has more/less than 2 points).
+9. test_no_intervals.json – Breaks rule #9 (no intervals present).
+10. test_empty_contract.json – Breaks rule #10 (everything is zero-empty).

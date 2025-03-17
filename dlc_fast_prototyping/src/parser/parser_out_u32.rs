@@ -73,12 +73,28 @@ impl SimpleOutU32Parser {
 impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
     fn parse_input(contract_path: &str) -> Result<ParsedContract<types::OutcomeU32>, Error> {
         // Read input file containing contract JSON into string
-        let contract_input_str =
-            fs::read_to_string(contract_path).expect("Error reading contract input file.");
+        let contract_input_str = match fs::read_to_string(contract_path) {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
 
         // Deserialize contract input
-        let contract_input: ContractInput =
-            serde_json::from_str(&contract_input_str).expect("Error deserializing contract input.");
+        let contract_input: ContractInput = match serde_json::from_str(&contract_input_str) {
+            Ok(ci) => ci,
+            Err(e) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Error deserializing JSON: {}", e),
+                ));
+            }
+        };
+
+        // Call validation first
+        contract_input.validate().map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{:?}", e))
+        })?;
+
+        // At this point, if we have reached here, we can safely assume that the contract is valid
 
         // Reserve capacity for final vector based on maximum possible outcome (we avoid reallocating by doing this)
         let mut parsed_contract =
@@ -97,6 +113,10 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
             // Calculate interval length and payout difference
             let start_outcome = start_point.event_outcome;
             let end_outcome = end_point.event_outcome;
+            assert!(
+                end_outcome > start_outcome,
+                "end outcome must be greater than start outcome"
+            );
             let interval_len = end_outcome - start_outcome;
 
             let start_payout = start_point.outcome_payout;
@@ -121,16 +141,106 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
             .contract_descriptor
             .payout_intervals
             .last()
-            .expect("No payout intervals found in contract input");
-        let last_point = last_interval
-            .payout_points
-            .last()
-            .expect("No payout points found in the last interval");
+            .unwrap();
+        let last_point = last_interval.payout_points.last().unwrap();
         parsed_contract.push((
             OutcomeU32::from(last_point.event_outcome),
             last_point.outcome_payout,
         ));
 
         Ok(parsed_contract)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn validate_parse_test_contracts(json_input: &str) {
+        let contract_input: ContractInput =
+            serde_json::from_str(json_input).expect("Serde JSON should not fail at this point!");
+        assert!(contract_input.validate().is_err());
+    }
+
+    fn assert_deserialization_error(json_str: &str) {
+        let parse_result = serde_json::from_str::<ContractInput>(json_str);
+        assert!(
+            parse_result.is_err(),
+            "Expected an error, but got Ok(...) instead"
+        );
+    }
+
+    // Test cases for invalid JSON
+
+    #[test]
+    fn test_deserialization_of_empty_contract() {
+        assert_deserialization_error(include_str!(
+            "../../input_contracts/test_contracts/empty_contract_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_deserialization_of_negative_payout() {
+        assert_deserialization_error(include_str!(
+            "../../input_contracts/test_contracts/negative_payout_input.json"
+        ));
+    }
+
+    // Test cases for invalid contracts (but otherwise valid JSON)
+
+    #[test]
+    fn test_invalid_collateral() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/invalid_collateral_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_excessive_feerate() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/excessive_feerate_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_last_outcome_not_final() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/last_outcome_not_final_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_invalid_payout_level() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/invalid_payout_level_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_no_intervals() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/no_intervals_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_invalid_interval_points() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/invalid_interval_points_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_nonzero_first_point() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/nonzero_first_point_input.json"
+        ));
+    }
+
+    #[test]
+    fn test_non_continuous() {
+        validate_parse_test_contracts(include_str!(
+            "../../input_contracts/test_contracts/noncontinuous_input.json"
+        ));
     }
 }

@@ -55,7 +55,7 @@ where
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
         let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
-        let storage = SimpleArrayStorage::new(MAX_OUTCOME as usize);
+        let storage = SimpleArrayStorage::new((MAX_OUTCOME + 1) as usize);
         let parsed_contract = ParsedContract::new();
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
@@ -83,8 +83,8 @@ where
         }
     }
 
-    fn load_input(&mut self, _input_path: &str) -> Result<(), Error> {
-        self.parsed_contract = MyParser::parse_input(_input_path)?;
+    fn load_input(&mut self, input_path: &str) -> Result<(), Error> {
+        self.parsed_contract = MyParser::parse_input(input_path)?;
         Ok(())
     }
 

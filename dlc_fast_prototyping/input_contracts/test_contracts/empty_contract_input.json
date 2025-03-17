@@ -1,0 +1,15 @@
+{
+  "offerCollateral": 0,
+  "acceptCollateral": 0,
+  "feeRate": 0,
+  "contractInfo": {
+    "contractDescriptor": {
+      "payoutIntervals": []
+    },
+    "oracle": {
+      "publicKey": "",
+      "eventId": "",
+      "nbDigits": 0
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "offerCollateral": 100,
+  "acceptCollateral": 50,
+  "feeRate": 250,
+  "contractInfo": {
+    "contractDescriptor": {
+      "payoutIntervals": [
+        {
+          "payoutPoints": [
+            { "eventOutcome": 0, "outcomePayout": 10 },
+            { "eventOutcome": 10, "outcomePayout": 10 }
+          ]
+        },
+        {
+          "payoutPoints": [
+            { "eventOutcome": 10, "outcomePayout": 15 },
+            { "eventOutcome": 30, "outcomePayout": 15 }
+          ]
+        }
+      ]
+    },
+    "oracle": {
+      "publicKey": "020d829c1cc556aa59060df5a9543c5357199ace5db9bcd5a8ddd6ee2fc7b6d174",
+      "eventId": "lastOutcomeNotFinalTest",
+      "nbDigits": 5
+    }
+  }
+}
