@@ -11,7 +11,7 @@ pub struct SimpleOutU32Parser;
 impl SimpleOutU32Parser {
     // Creates a Vec of length `len` where v[i] = init + i*inc
 
-    // Serial version in standard Rust:
+    #[cfg(not(feature = "parallel-parser"))]
     fn create_linear_seq(
         start_outcome: u32,
         len: u32,
@@ -29,8 +29,8 @@ impl SimpleOutU32Parser {
             .collect()
     }
 
-    // Parallel version using Rayon:
-    fn create_linear_seq_parallel(
+    #[cfg(feature = "parallel-parser")]
+    fn create_linear_seq(
         start_outcome: u32,
         len: u32,
         start_payout: types::PayoutT,
@@ -48,6 +48,7 @@ impl SimpleOutU32Parser {
             .collect()
     }
 
+    #[cfg(not(feature = "parallel-parser"))]
     fn create_const_payout_vec(
         start_outcome: u32,
         interval_len: u32,
@@ -58,7 +59,8 @@ impl SimpleOutU32Parser {
             .collect()
     }
 
-    fn create_const_payout_vec_parallel(
+    #[cfg(feature = "parallel-parser")]
+    fn create_const_payout_vec(
         start_outcome: u32,
         interval_len: u32,
         constant_payout: types::PayoutT,

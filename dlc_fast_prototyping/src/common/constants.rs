@@ -8,6 +8,9 @@ pub const ZERO_OUTCOME_ATP: u32 = 1000; // random value bigger than NB_DIGITS re
 // main
 pub const ALICE: &str = "Alice";
 pub const BOB: &str = "Bob";
-pub const CONTRACT_INPUT_PATH: &str = "./input_contracts/test_contracts/empty_contract_input.json";
+pub const CONTRACT_INPUT_PATH: &str =
+    "./input_contracts/sample_contracts/simple_contract_input.json";
 
+// "./input_contracts/test_contracts/noncontinuous_input.json";
+// "./input_contracts/sample_contracts/numerical_contract_input.json";
 // 1_048_575

@@ -34,5 +34,6 @@ name = "math-bench"
 ecdsa = []
 schnorr = []
 parallel-cpt = []
+parallel-parser = []
 enable_benchmarks = []
 default = ["ecdsa"]
