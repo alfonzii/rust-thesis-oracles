@@ -2,12 +2,12 @@
 
 use crate::{
     adaptor_signature_scheme::AdaptorSignatureScheme,
-    common::{self, types, OutcomeU32},
+    common::{self, types},
     crypto_utils::CryptoUtils,
     dlc_computation::DlcComputation,
     dlc_storage::StorageElement,
 };
-use secp256k1_zkp::{Keypair, Message, PublicKey, SecretKey};
+use secp256k1_zkp::{Keypair, PublicKey};
 use std::marker::PhantomData;
 
 #[cfg(feature = "parallel-cpt")]

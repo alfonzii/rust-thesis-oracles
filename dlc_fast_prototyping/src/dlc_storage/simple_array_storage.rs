@@ -12,8 +12,8 @@ impl<ASigS> DlcStorage<ASigS, types::OutcomeU32> for SimpleArrayStorage<ASigS>
 where
     ASigS: AdaptorSignatureScheme,
 {
-    fn new(nb_outcomes: usize) -> Self {
-        let storage = vec![StorageElement::<ASigS>::default(); nb_outcomes];
+    fn new(nb_outcomes: u32) -> Self {
+        let storage = vec![StorageElement::<ASigS>::default(); nb_outcomes as usize];
         Self { storage }
     }
 

@@ -2,13 +2,14 @@
 
 use crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
 use crate::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
+use crate::oracle::RandIntOracle;
 use crate::parser::parser_mock::MockU32Parser;
 use crate::parser::parser_out_u32::SimpleOutU32Parser;
-// use crate::parser::parser_out_u32::SimpleOutU32Parser;
-use crate::{
-    adaptor_signature_scheme::{EcdsaAdaptorSignatureScheme, SchnorrAdaptorSignatureScheme},
-    oracle::RandIntOracle,
-};
+
+#[cfg(feature = "ecdsa")]
+use crate::adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
+#[cfg(feature = "schnorr")]
+use crate::adaptor_signature_scheme::SchnorrAdaptorSignatureScheme;
 
 #[cfg(feature = "ecdsa")]
 pub type MyAdaptorSignatureScheme = EcdsaAdaptorSignatureScheme;

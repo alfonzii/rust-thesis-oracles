@@ -1,6 +1,6 @@
 use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 
-use crate::common::constants::{MAX_OUTCOME, TOTAL_COLLATERAL};
+use crate::common::constants::MAX_OUTCOME;
 use crate::common::runparams::{MyParser, MySignature};
 use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
 use crate::crypto_utils::CryptoUtils;
@@ -36,14 +36,15 @@ where
     keypair: Keypair,
     storage: SimpleArrayStorage<ASigS>,
     parsed_contract: ParsedContract<OutcomeU32>,
+    total_collateral: types::PayoutT,
 
     cp_verification_key: PublicKey,
     cp_adaptors: Vec<ASigS::AdaptorSignature>,
     oracle_attestation: OracleAttestation,
     next_attestation_time: u32,
 
-    _phantom1: PhantomData<ASigS>,
-    _phantom2: PhantomData<CU>,
+    _phantom_asig: PhantomData<ASigS>,
+    _phantom_cu: PhantomData<CU>,
 }
 
 impl<ASigS, CU, O> DlcController<ASigS, CU, O> for VerySimpleController<ASigS, CU, O>
@@ -55,13 +56,14 @@ where
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
         let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
-        let storage = SimpleArrayStorage::new((MAX_OUTCOME + 1) as usize);
+        let storage = SimpleArrayStorage::new(MAX_OUTCOME + 1);
         let parsed_contract = ParsedContract::new();
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
                 .unwrap()
                 .public_key(SECP256K1);
         let cp_adaptors = Vec::new();
+        let total_collateral: types::PayoutT = 0;
         let oracle_attestation = OracleAttestation {
             outcome: OutcomeU32::from(MAX),
             attestation: SecretKey::new(&mut rand::thread_rng()),
@@ -74,17 +76,20 @@ where
             keypair,
             storage,
             parsed_contract,
+            total_collateral,
             cp_verification_key,
             cp_adaptors,
             oracle_attestation,
             next_attestation_time,
-            _phantom1: PhantomData,
-            _phantom2: PhantomData,
+            _phantom_asig: PhantomData,
+            _phantom_cu: PhantomData,
         }
     }
 
     fn load_input(&mut self, input_path: &str) -> Result<(), Error> {
-        self.parsed_contract = MyParser::parse_input(input_path)?;
+        let contract_input = MyParser::read_input(input_path)?;
+        self.total_collateral = contract_input.accept_collateral + contract_input.offer_collateral; // TODO: we created this small hack where we take out total_collateral instead of whole ContractInput. However, it can be changed, but for now it seems to be fine.
+        self.parsed_contract = MyParser::parse_contract_input(contract_input)?;
         Ok(())
     }
 
@@ -96,7 +101,7 @@ where
         // create cet -> atp point -> adaptor sig -> storage element
         let storage_elements_vec = MyDlcComputation::<ASigS, CU>::compute_storage_elements_vec(
             &self.parsed_contract,
-            TOTAL_COLLATERAL,
+            self.total_collateral,
             &self.keypair,
             &event_anncmt.public_key,
             &event_anncmt.public_nonce,

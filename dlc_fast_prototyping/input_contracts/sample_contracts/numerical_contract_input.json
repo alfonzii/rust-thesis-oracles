@@ -61,7 +61,7 @@
                 "outcomePayout": 150000000
                 },
                 {
-                "eventOutcome": 1048575,
+                "eventOutcome": 262143,
                 "outcomePayout": 200000000
                 }
             ]
@@ -71,7 +71,7 @@
     "oracle": {
         "publicKey": "020d829c1cc556aa59060df5a9543c5357199ace5db9bcd5a8ddd6ee2fc7b6d174",
         "eventId": "btcusd1707120297",
-        "nbDigits": 20
+        "nbDigits": 18
     }
     }
 }

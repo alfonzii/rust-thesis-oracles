@@ -1,7 +1,8 @@
 use crate::common::constants::MAX_OUTCOME;
-use crate::common::{types, ContractInput, Outcome, OutcomeU32, ParsedContract};
+use crate::common::{types, ContractInput, OutcomeU32, ParsedContract};
 use crate::parser::Parser;
 
+#[cfg(feature = "parallel-parser")]
 use rayon::prelude::*;
 use std::fs;
 use std::io::Error;
@@ -73,7 +74,7 @@ impl SimpleOutU32Parser {
 }
 
 impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
-    fn parse_input(contract_path: &str) -> Result<ParsedContract<types::OutcomeU32>, Error> {
+    fn read_input(contract_path: &str) -> Result<ContractInput, Error> {
         // Read input file containing contract JSON into string
         let contract_input_str = match fs::read_to_string(contract_path) {
             Ok(s) => s,
@@ -90,7 +91,12 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
                 ));
             }
         };
+        Ok(contract_input)
+    }
 
+    fn parse_contract_input(
+        contract_input: ContractInput,
+    ) -> Result<ParsedContract<OutcomeU32>, Error> {
         // Call validation first
         contract_input.validate().map_err(|e| {
             std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{:?}", e))

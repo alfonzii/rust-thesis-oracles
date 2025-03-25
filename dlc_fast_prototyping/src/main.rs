@@ -1,8 +1,9 @@
 // main.rs
 
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
+#[cfg(feature = "enable_benchmarks")]
+use std::time::Instant;
 
-use adaptor_signature_scheme::EcdsaAdaptorSignatureScheme;
 use common::{
     constants::{ALICE, BOB, CONTRACT_INPUT_PATH, MAX_OUTCOME},
     runparams::{MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle, MySignature},
@@ -24,7 +25,9 @@ mod parser;
 // alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
 
 mod bench {
-    use std::time::{Duration, Instant};
+    use std::time::Duration;
+    #[cfg(feature = "enable_benchmarks")]
+    use std::time::Instant;
 
     #[cfg(feature = "enable_benchmarks")]
     pub fn measure_step<R, F: FnOnce() -> R>(
@@ -51,6 +54,7 @@ mod bench {
     }
 
     // Function to print benchmarking table.
+    #[cfg(feature = "enable_benchmarks")]
     pub fn print_table(steps: &Vec<(String, Duration)>, total_time: Duration) {
         println!("\n-------------------------------------------------------------");
         println!("{:<35}{:<15}{:<15}", "STEP", "TIME", "RATIO");
@@ -127,7 +131,9 @@ fn finalized_tx_valid(
 }
 
 fn main() {
+    #[cfg(feature = "enable_benchmarks")]
     let start = Instant::now();
+
     let mut steps = Vec::new();
 
     // Create oracle pointer, so both controllers use API of same oracle
@@ -238,7 +244,7 @@ fn main() {
 mod tests {
     use crate::{
         adaptor_signature_scheme::AdaptorSignatureScheme,
-        crypto_utils::simple_crypto_utils::SimpleCryptoUtils,
+        adaptor_signature_scheme::EcdsaAdaptorSignatureScheme,
     };
 
     use super::*;
@@ -274,7 +280,7 @@ mod tests {
         // Generate nonce keypair (for anticipation point / attestation)
         let (nonce_sk, nonce_pk) = secp.generate_keypair(&mut rng);
 
-        // Create SimpleCryptoUtils engine
+        // Create MyCryptoUtils engine
         let crypto_utils_engine = MyCryptoUtils::new(&keypair.public_key(), &nonce_pk);
 
         // Create message
@@ -286,7 +292,7 @@ mod tests {
         let outcome_value = 42u32;
         let outcome = OutcomeU32::from(outcome_value);
 
-        // Compute anticipation point using SimpleCryptoUtils
+        // Compute anticipation point using MyCryptoUtils
         let anticipation_point = crypto_utils_engine
             .compute_anticipation_point(&outcome)
             .expect("Failed to compute anticipation point");
@@ -304,7 +310,7 @@ mod tests {
             "Pre-verification failed"
         );
 
-        // Compute attestation using SimpleCryptoUtils (using nonce_sk as private nonce)
+        // Compute attestation using MyCryptoUtils (using nonce_sk as private nonce)
         let attestation = crypto_utils_engine
             .compute_attestation(&keypair.secret_key(), &nonce_sk, &outcome)
             .expect("Failed to compute attestation");

@@ -34,7 +34,9 @@ pub trait AdaptorSignatureScheme {
 mod ecdsa_zkp_adaptor;
 mod schnorr_zkp_adaptor;
 
+#[cfg(feature = "ecdsa")]
 pub use ecdsa_zkp_adaptor::EcdsaAdaptorSignatureScheme;
+#[cfg(feature = "schnorr")]
 pub use schnorr_zkp_adaptor::SchnorrAdaptorSignatureScheme;
 
 use crate::common::types;

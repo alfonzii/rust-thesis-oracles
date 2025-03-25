@@ -1,8 +1,10 @@
-use crate::common::{types, ParsedContract};
+use crate::common::{types, ContractInput, ParsedContract};
 
 pub trait Parser<Out: types::Outcome> {
-    // Parses input from a given contract path.
-    fn parse_input(contract_path: &str) -> Result<ParsedContract<Out>, std::io::Error>;
+    fn read_input(contract_path: &str) -> Result<ContractInput, std::io::Error>;
+    fn parse_contract_input(
+        contract_input: ContractInput,
+    ) -> Result<ParsedContract<Out>, std::io::Error>;
 }
 
 pub mod parser_mock;

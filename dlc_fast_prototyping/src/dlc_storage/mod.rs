@@ -9,7 +9,7 @@ where
     ASigS: AdaptorSignatureScheme,
     Out: types::Outcome,
 {
-    fn new(nb_outcomes: usize) -> Self
+    fn new(nb_outcomes: u32) -> Self
     where
         Self: Sized;
 

@@ -180,7 +180,7 @@ mod tests {
         // Use different fixed secret keys for signing and nonce.
         let sk = SecretKey::from_slice(&[2u8; 32]).expect("32 bytes, within curve order");
         let nonce = SecretKey::from_slice(&[3u8; 32]).expect("32 bytes, within curve order");
-        let pk = PublicKey::from_secret_key(SECP256K1, &sk);
+        let pk = PublicKey::from_secret_key(&secp, &sk);
         let utils = BasisCryptoUtils::new(&pk, &pk);
 
         let outcome = OutcomeU32::from(5);
@@ -189,6 +189,6 @@ mod tests {
             attestation_res.is_ok(),
             "Attestation computation should succeed"
         );
-        let attestation = attestation_res.unwrap();
+        let _attestation = attestation_res.unwrap();
     }
 }
