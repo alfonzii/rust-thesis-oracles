@@ -1,15 +1,12 @@
+use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
+use crate::parser::Parser;
 use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 
-use crate::common::constants::MAX_OUTCOME;
-use crate::common::runparams::{MyParser, MySignature};
-use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
+use crate::config::{MyParser, MySignature, NB_OUTCOMES};
 use crate::crypto_utils::CryptoUtils;
-use crate::dlc_computation::unified_dlc_computation::UnifiedDlcComputation;
-use crate::dlc_computation::DlcComputation;
-use crate::dlc_storage::simple_array_storage::SimpleArrayStorage;
-use crate::dlc_storage::DlcStorage;
+use crate::dlc_computation::{unified_dlc_computation::UnifiedDlcComputation, DlcComputation};
+use crate::dlc_storage::{simple_array_storage::SimpleArrayStorage, DlcStorage};
 use crate::oracle::{Oracle, OracleAttestation};
-use crate::parser::Parser;
 use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, dlc_controller::DlcController};
 
 use secp256k1_zkp::rand;
@@ -56,7 +53,7 @@ where
 {
     fn new(name: &str, oracle: Arc<O>) -> Self {
         let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
-        let storage = SimpleArrayStorage::new(MAX_OUTCOME + 1);
+        let storage = SimpleArrayStorage::new(NB_OUTCOMES);
         let parsed_contract = ParsedContract::new();
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
@@ -144,13 +141,13 @@ where
 
     fn wait_attestation(&mut self) -> bool {
         let mut attestation = self.oracle.get_event_attestation(0);
-        attestation.outcome = OutcomeU32::from(attestation.outcome.get_value() % MAX_OUTCOME);
+        attestation.outcome = OutcomeU32::from(attestation.outcome.get_value() % NB_OUTCOMES);
 
         self.oracle_attestation = attestation;
 
-        if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < MAX_OUTCOME / 2)
+        if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < NB_OUTCOMES / 2)
             || (self.name == "Bob"
-                && self.oracle_attestation.outcome.get_value() >= MAX_OUTCOME / 2)
+                && self.oracle_attestation.outcome.get_value() >= NB_OUTCOMES / 2)
         {
             true
         } else {

@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use secp256k1_zkp::{Error, PublicKey, Scalar, SecretKey};
 
-use crate::common::constants::{NB_DIGITS, ZERO_OUTCOME_ATP};
 use crate::common::types;
+use crate::config::{NB_DIGITS, ZERO_OUTCOME_ATP};
 use crate::crypto_utils::CryptoUtils;
 
 use crate::common::types::OutcomeU32;

@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use dlc_fast_prototyping::common::runparams::{MyAdaptorSignatureScheme, MyCryptoUtils};
+use dlc_fast_prototyping::config::runparams::{MyAdaptorSignatureScheme, MyCryptoUtils};
 use rand::thread_rng;
 use secp256k1_zkp::{Keypair, Secp256k1};
 

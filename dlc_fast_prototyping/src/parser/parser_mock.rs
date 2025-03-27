@@ -1,5 +1,5 @@
-use crate::common::constants::MAX_OUTCOME;
 use crate::common::{types, OutcomeU32, ParsedContract};
+use crate::config::MAX_OUTCOME;
 use crate::parser::Parser;
 
 pub struct MockU32Parser;

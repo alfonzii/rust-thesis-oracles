@@ -3,10 +3,8 @@
 use secp256k1_zkp::PublicKey;
 
 use crate::{
-    adaptor_signature_scheme::AdaptorSignatureScheme,
-    common::{runparams::MySignature, types},
-    crypto_utils::CryptoUtils,
-    oracle::Oracle,
+    adaptor_signature_scheme::AdaptorSignatureScheme, common::types, config::MySignature,
+    crypto_utils::CryptoUtils, oracle::Oracle,
 };
 use std::{io::Error, sync::Arc};
 

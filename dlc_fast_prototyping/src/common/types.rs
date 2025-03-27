@@ -1,12 +1,11 @@
 // src/common/types.rs
 
 use secp256k1_zkp;
-// use secp256k1_zkp::PublicKey as SecpPublicKey;
 use secp256k1_zkp::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 
-use crate::common::constants::NB_DIGITS;
 use crate::common::error::ContractError;
+use crate::config::NB_DIGITS;
 
 /// -- Aliases for outcome types --
 pub type AnticipationPoint = PublicKey;

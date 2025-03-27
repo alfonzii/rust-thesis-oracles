@@ -4,16 +4,18 @@ use std::sync::Arc;
 #[cfg(feature = "enable_benchmarks")]
 use std::time::Instant;
 
-use common::{
-    constants::{ALICE, BOB, CONTRACT_INPUT_PATH, MAX_OUTCOME},
+use common::{types, FinalizedTx};
+use config::{
+    constants::{ALICE, BOB, CONTRACT_INPUT_PATH},
     runparams::{MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle, MySignature},
-    types, FinalizedTx,
+    MAX_OUTCOME,
 };
 use dlc_controller::{very_simple_controller::VerySimpleController, DlcController};
 use secp256k1_zkp::Secp256k1;
 
 mod adaptor_signature_scheme;
 mod common;
+mod config;
 mod crypto_utils;
 mod dlc_computation;
 mod dlc_controller;
@@ -138,9 +140,10 @@ fn main() {
 
     // Create oracle pointer, so both controllers use API of same oracle
     let oracle = Arc::new(MyOracle::new());
+
     println!(
         "Oracle outcome: {:?} from {:?}",
-        oracle.get_outcome() % MAX_OUTCOME,
+        oracle.get_outcome(),
         MAX_OUTCOME
     );
 

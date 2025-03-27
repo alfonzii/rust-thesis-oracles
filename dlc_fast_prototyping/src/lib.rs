@@ -1,6 +1,7 @@
 // src/lib.rs
 pub mod adaptor_signature_scheme;
 pub mod common;
+pub mod config;
 pub mod crypto_utils;
 pub mod dlc_computation;
 pub mod dlc_controller;

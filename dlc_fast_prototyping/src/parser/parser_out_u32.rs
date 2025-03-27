@@ -1,5 +1,5 @@
-use crate::common::constants::MAX_OUTCOME;
 use crate::common::{types, ContractInput, OutcomeU32, ParsedContract};
+use crate::config::NB_OUTCOMES;
 use crate::parser::Parser;
 
 #[cfg(feature = "parallel-parser")]
@@ -104,9 +104,9 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
 
         // At this point, if we have reached here, we can safely assume that the contract is valid
 
-        // Reserve capacity for final vector based on maximum possible outcome (we avoid reallocating by doing this)
+        // Reserve capacity for final vector based on number of possible outcomes (we avoid reallocating by doing this)
         let mut parsed_contract =
-            ParsedContract::<types::OutcomeU32>::with_capacity(MAX_OUTCOME as usize);
+            ParsedContract::<types::OutcomeU32>::with_capacity(NB_OUTCOMES as usize);
 
         // Parse contract intervals and create a vector of (outcome, payout) pairs
         for interval in &contract_input
