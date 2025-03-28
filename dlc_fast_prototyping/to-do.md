@@ -51,7 +51,7 @@
     + globalny secp kontext
 - `common`
     - `constants.rs`
-        + nejak zgeneralizovat "Alice" a "Bob", aby to nezaviselo len na jednom stringu (to je aj vo `very_simple_controller.rs`)
+        + ✅ ~~nejak zgeneralizovat "Alice" a "Bob", aby to nezaviselo len na jednom stringu (to je aj vo `very_simple_controller.rs`)~~ _pouzivame Offerer & Accepter_
         + ✅ ~~eventualne nastavit `MAX_OUTCOME` niekde inde v kode, aby sme mohli parametrizovat iba pomocou `NB_DIGITS`~~
     - `error.rs`
         + po ukonceni refactoringu ak nepotrebujem unused errory tak ich vymazat

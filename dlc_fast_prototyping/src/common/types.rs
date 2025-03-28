@@ -21,30 +21,30 @@ pub type ParsedContract<O: Outcome> = Vec<(O, PayoutT)>; // (outcome, payout) pa
 /// that will be broadcasted after finalization.
 pub struct FinalizedTx<Sig> {
     pub payload: Cet,
-    pub signature1: Sig,
-    pub signature2: Sig,
+    pub offerer_sig: Sig,
+    pub accepter_sig: Sig,
 }
 
 impl<Sig> FinalizedTx<Sig> {
-    pub fn new(payload: Cet, signature1: Sig, signature2: Sig) -> Self {
+    pub fn new(payload: Cet, offerer_sig: Sig, accepter_sig: Sig) -> Self {
         Self {
             payload,
-            signature1,
-            signature2,
+            offerer_sig,
+            accepter_sig,
         }
     }
 }
 
 pub struct MultisigFundAddress {
-    pub public_key1: PublicKey,
-    pub public_key2: PublicKey,
+    pub offerer_pubkey: PublicKey,
+    pub accepter_pubkey: PublicKey,
 }
 
 impl MultisigFundAddress {
-    pub fn new(public_key1: PublicKey, public_key2: PublicKey) -> Self {
+    pub fn new(offerer_pubkey: PublicKey, accepter_pubkey: PublicKey) -> Self {
         Self {
-            public_key1,
-            public_key2,
+            offerer_pubkey,
+            accepter_pubkey,
         }
     }
 }

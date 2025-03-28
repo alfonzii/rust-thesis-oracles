@@ -5,9 +5,16 @@ use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 use crate::config::{MyParser, MySignature, NB_OUTCOMES};
 use crate::crypto_utils::CryptoUtils;
 use crate::dlc_computation::{unified_dlc_computation::UnifiedDlcComputation, DlcComputation};
+use crate::dlc_controller::ControllerType;
 use crate::dlc_storage::{simple_array_storage::SimpleArrayStorage, DlcStorage};
 use crate::oracle::{Oracle, OracleAttestation};
-use crate::{adaptor_signature_scheme::AdaptorSignatureScheme, dlc_controller::DlcController};
+use crate::{
+    adaptor_signature_scheme::AdaptorSignatureScheme,
+    dlc_controller::{
+        ControllerType::{Accepter, Offerer},
+        DlcController,
+    },
+};
 
 use secp256k1_zkp::rand;
 use std::io::Error;
@@ -29,6 +36,7 @@ where
     O: Oracle,
 {
     name: String,
+    controller_type: ControllerType,
     oracle: Arc<O>,
     keypair: Keypair,
     storage: SimpleArrayStorage<ASigS>,
@@ -51,7 +59,7 @@ where
     CU: CryptoUtils + Sync,
     O: Oracle,
 {
-    fn new(name: &str, oracle: Arc<O>) -> Self {
+    fn new(name: &str, ctype: ControllerType, oracle: Arc<O>) -> Self {
         let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
         let storage = SimpleArrayStorage::new(NB_OUTCOMES);
         let parsed_contract = ParsedContract::new();
@@ -69,6 +77,7 @@ where
 
         Self {
             name: name.to_string(),
+            controller_type: ctype,
             oracle,
             keypair,
             storage,
@@ -139,12 +148,16 @@ where
         self.storage.update_cp_adaptors(self.cp_adaptors.clone())
     }
 
-    fn wait_attestation(&mut self) -> bool {
-        let mut attestation = self.oracle.get_event_attestation(0);
-        attestation.outcome = OutcomeU32::from(attestation.outcome.get_value() % NB_OUTCOMES);
+    fn wait_attestation(&mut self) -> Result<(), Error> {
+        self.oracle_attestation = self.oracle.get_event_attestation(0);
 
-        self.oracle_attestation = attestation;
+        // TODO: ponizie kodu sa zbavit, je to hardcoded optimisticka optimalizacia. nie len ze je zbytocna na default run, este je aj chybna
+        // (ona totiz pocita s mock setupom, ale ked mame payouts nie vzdy rastuce a v polovici sa preklapajuce, tak nefunguje dobre)
+        // ak chceme optimisticku adaptor optimalizaciu, tak dat osobitne nejaku funkciu napr. `has_winning_payout()` do `fun.rs`
+        // a podla toho rozhodnut potom co dalej. By default by sme vsak nemali mat optimisticku optimalizaciu a mali by byt
+        // schopni broadcastovat obidvaja.
 
+        /*
         if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < NB_OUTCOMES / 2)
             || (self.name == "Bob"
                 && self.oracle_attestation.outcome.get_value() >= NB_OUTCOMES / 2)
@@ -157,6 +170,9 @@ where
             );
             false
         }
+        */
+
+        Ok(())
     }
 
     // If we are aware of event outcome, we can finalize winning DLC transaction which will be then broadcasted to the blockchain
@@ -178,13 +194,13 @@ where
             &self.oracle_attestation.attestation,
         );
 
-        if self.name == "Alice" {
+        if self.controller_type == Offerer {
             types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, my_sig, cp_sig)
-        } else if self.name == "Bob" {
+        } else if self.controller_type == Accepter {
             types::FinalizedTx::<ASigS::Signature>::new(outcome_element.cet, cp_sig, my_sig)
         } else {
-            // Fallback (or panic) if name is neither "Alice" nor "Bob"
-            panic!("Unknown controller name: {}", self.name);
+            // Fallback (or panic) if controller type is neither Offerer nor Accepter
+            panic!("Unknown controller type: {:?}", self.controller_type);
         }
     }
 

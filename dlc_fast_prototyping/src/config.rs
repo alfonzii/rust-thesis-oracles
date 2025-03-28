@@ -19,8 +19,6 @@ pub mod constants {
     };
 
     // main
-    pub const ALICE: &str = "Alice";
-    pub const BOB: &str = "Bob";
     pub const CONTRACT_INPUT_PATH: &str =
         "./input_contracts/sample_contracts/simple_contract_input.json"; // "./input_contracts/test_contracts/noncontinuous_input.json";
 }

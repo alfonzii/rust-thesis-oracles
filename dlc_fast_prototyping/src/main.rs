@@ -6,11 +6,11 @@ use std::time::Instant;
 
 use common::{types, FinalizedTx};
 use config::{
-    constants::{ALICE, BOB, CONTRACT_INPUT_PATH},
+    constants::CONTRACT_INPUT_PATH,
     runparams::{MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle, MySignature},
     MAX_OUTCOME,
 };
-use dlc_controller::{very_simple_controller::VerySimpleController, DlcController};
+use dlc_controller::{very_simple_controller::VerySimpleController, ControllerType, DlcController};
 use secp256k1_zkp::Secp256k1;
 
 mod adaptor_signature_scheme;
@@ -25,6 +25,9 @@ mod parser;
 
 // TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
 // alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
+
+const ALICE: &str = "Alice";
+const BOB: &str = "Bob";
 
 mod bench {
     use std::time::Duration;
@@ -98,10 +101,10 @@ fn finalized_tx_valid(
         #[cfg(feature = "ecdsa")]
         {
             let sig1_ok = secp
-                .verify_ecdsa(&msg, &finalized_tx.signature1, &multisig.public_key1)
+                .verify_ecdsa(&msg, &finalized_tx.offerer_sig, &multisig.offerer_pubkey)
                 .is_ok();
             let sig2_ok = secp
-                .verify_ecdsa(&msg, &finalized_tx.signature2, &multisig.public_key2)
+                .verify_ecdsa(&msg, &finalized_tx.accepter_sig, &multisig.accepter_pubkey)
                 .is_ok();
             (sig1_ok, sig2_ok)
         }
@@ -109,16 +112,16 @@ fn finalized_tx_valid(
         {
             let sig1_ok = secp
                 .verify_schnorr(
-                    &finalized_tx.signature1,
+                    &finalized_tx.offerer_sig,
                     &msg,
-                    &multisig.public_key1.x_only_public_key().0,
+                    &multisig.offerer_pubkey.x_only_public_key().0,
                 )
                 .is_ok();
             let sig2_ok = secp
                 .verify_schnorr(
-                    &finalized_tx.signature2,
+                    &finalized_tx.accepter_sig,
                     &msg,
-                    &multisig.public_key2.x_only_public_key().0,
+                    &multisig.accepter_pubkey.x_only_public_key().0,
                 )
                 .is_ok();
             (sig1_ok, sig2_ok)
@@ -152,12 +155,14 @@ fn main() {
         bench::measure_step("Construct controller (Alice)", &mut steps, || {
             VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
                 ALICE,
+                ControllerType::Offerer,
                 Arc::clone(&oracle),
             )
         });
     let mut controller_bob = bench::measure_step("Construct controller (Bob)", &mut steps, || {
         VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
             BOB,
+            ControllerType::Accepter,
             Arc::clone(&oracle),
         )
     });
@@ -223,18 +228,20 @@ fn main() {
         controller_bob.share_verification_key(),
     );
 
-    // Wait for oracle attestation and finalize if positive
+    // Wait for oracle attestation and finalize
+    // INFO: for now, we finalize all results, we don't do optimistic optimization.
     bench::measure_step("Wait attestation + finalize (Alice)", &mut steps, || {
-        if controller_alice.wait_attestation() {
-            let finalized_tx = controller_alice.finalize_tx();
-            assert!(finalized_tx_valid(&finalized_tx, &multisig));
-        }
+        controller_alice.wait_attestation().unwrap();
+        let finalized_tx = controller_alice.finalize_tx();
+        print!("Offerer: ");
+        assert!(finalized_tx_valid(&finalized_tx, &multisig));
     });
+
     bench::measure_step("Wait attestation + finalize (Bob)", &mut steps, || {
-        if controller_bob.wait_attestation() {
-            let finalized_tx = controller_bob.finalize_tx();
-            assert!(finalized_tx_valid(&finalized_tx, &multisig));
-        }
+        controller_bob.wait_attestation().unwrap();
+        let finalized_tx = controller_bob.finalize_tx();
+        print!("Accepter: ");
+        assert!(finalized_tx_valid(&finalized_tx, &multisig));
     });
 
     #[cfg(feature = "enable_benchmarks")]

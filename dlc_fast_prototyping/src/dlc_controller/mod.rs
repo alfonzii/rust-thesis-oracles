@@ -8,6 +8,12 @@ use crate::{
 };
 use std::{io::Error, sync::Arc};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControllerType {
+    Offerer,
+    Accepter,
+}
+
 pub trait DlcController<ASigS, CU, O>
 where
     ASigS: AdaptorSignatureScheme,
@@ -15,7 +21,7 @@ where
     O: Oracle,
 {
     /// Creates a new controller with a given name and oracle.
-    fn new(name: &str, oracle: Arc<O>) -> Self;
+    fn new(name: &str, ctype: ControllerType, oracle: Arc<O>) -> Self;
 
     /// Loads DLC input from a file.
     fn load_input(&mut self, input_path: &str) -> Result<(), Error>;
@@ -42,7 +48,7 @@ where
     fn update_cp_adaptors(&mut self) -> Result<(), Error>;
 
     /// Waits for oracle attestation to proceed with finalizing the DLC.
-    fn wait_attestation(&mut self) -> bool;
+    fn wait_attestation(&mut self) -> Result<(), Error>;
 
     /// Finalizes the transaction using the relevant signatures.
     fn finalize_tx(&self) -> types::FinalizedTx<MySignature>;
