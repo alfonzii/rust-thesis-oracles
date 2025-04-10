@@ -27,8 +27,8 @@
 - 🔄 (in progress) pozriet co sa podpisuje pri realnom BTC pouziti v tx (ja aktualne totiz podpisujem iba String, co vsak nemusi byt dobra analogia 1:1 ku btc tx, ak sa nepodpisuje priamo btc tx), a pripadne to zmenit tak, aby to viac odrazalo skutocnost. Mozno podpisujeme len nejaky hash abo nieco take
 - 🔄 (in progress) overit spravnost schnorr verify
 - pozriet licenciu na vykradnuteho schnorra (MAL BY TO BYT MIT A TEDA CAJK, ALE POZRIET ESTE)
-- vyriesit compile warnings
-    + k tomu takisto spustit `clippy` a vyriesit aj jeho
+- ✅ ~~vyriesit compile warnings~~
+    + ~~k tomu takisto spustit `clippy` a vyriesit aj jeho~~
 - vyriesit a vymazat **TODO komentare** z kodu
 - rozumne okomentovat kod
 - porobit testy tam, kde to dava zmysel
@@ -36,6 +36,7 @@
 
 
 ## [NICE TO HAVE]
+- validacia input -> ked tam dodam nejaky dalsi member do toho payoutPoints medzi eventOutcome a outcomePayout, tak to funguje aj tak. A to by ale nemalo
 - asig optimization (relevant)
 - do benchmark run dodat aj mensie funkcie z `init_storage()` a `verify_adaptors()` (sice to mam v osobitnom benchmarku tieto mensie funkcie, ale neni to na real datach)
 - eventualne by mi mozno bolo dobre pouzivat XOnlyPublicKey kvoli optimalizacii? Zalezi...

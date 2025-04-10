@@ -23,8 +23,8 @@ where
 
     fn verify_cp_adaptors(
         verification_key: &PublicKey,
-        cp_adaptors: &Vec<ASigS::AdaptorSignature>,
-        storage_elements_vec: &Vec<StorageElement<ASigS>>,
+        cp_adaptors: &[ASigS::AdaptorSignature],
+        storage_elements_vec: &[StorageElement<ASigS>],
     ) -> bool;
 }
 

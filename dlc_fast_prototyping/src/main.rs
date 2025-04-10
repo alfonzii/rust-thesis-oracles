@@ -48,7 +48,7 @@ mod bench {
     #[cfg(not(feature = "enable_benchmarks"))]
     pub fn measure_step<R, F: FnOnce() -> R>(
         _label: &str,
-        _steps: &mut Vec<(String, Duration)>,
+        _steps: &mut [(String, Duration)],
         f: F,
     ) -> R {
         // No-op version

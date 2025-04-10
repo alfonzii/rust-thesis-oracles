@@ -11,8 +11,8 @@ pub struct SimpleCryptoUtils {
 impl CryptoUtils for SimpleCryptoUtils {
     fn new(public_key: &PublicKey, public_nonce: &PublicKey) -> Self {
         Self {
-            public_key: public_key.clone(),
-            public_nonce: public_nonce.clone(),
+            public_key: *public_key,
+            public_nonce: *public_nonce,
         }
     }
 

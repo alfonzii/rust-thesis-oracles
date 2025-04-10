@@ -38,8 +38,8 @@ impl BasisCryptoUtils {
 impl CryptoUtils for BasisCryptoUtils {
     fn new(public_key: &PublicKey, public_nonce: &PublicKey) -> Self {
         let mut instance = Self {
-            public_key: public_key.clone(),
-            public_nonce: public_nonce.clone(),
+            public_key: *public_key,
+            public_nonce: *public_nonce,
             precomputed_points: vec![
                 SecretKey::from_str(
                     "0000000000000000000000000000000000000000000000000000000000000001"
@@ -73,7 +73,7 @@ impl CryptoUtils for BasisCryptoUtils {
         // Else if outcome is not zero: Select basis atp_points and combine them.
         let mut selected_basis_atps = Vec::new();
         for i in 0..NB_DIGITS {
-            if outcome.get_bit(i as u8) {
+            if outcome.get_bit(i) {
                 selected_basis_atps.push(&self.precomputed_points[i as usize]);
             }
         }
@@ -101,7 +101,7 @@ impl CryptoUtils for BasisCryptoUtils {
 
         // Else if outcome is not zero: Find first non-zero outcome bit
         let first_index = (0..NB_DIGITS)
-            .find(|&i| outcome.get_bit(i as u8))
+            .find(|&i| outcome.get_bit(i))
             .ok_or(Error::InvalidGenerator)?;
 
         // Use the partial attestation for the first set bit as the initial value.
@@ -114,7 +114,7 @@ impl CryptoUtils for BasisCryptoUtils {
 
         // For every subsequent set bit, compute partial attestation and add (tweak) it.
         for i in (first_index + 1)..NB_DIGITS {
-            if outcome.get_bit(i as u8) {
+            if outcome.get_bit(i) {
                 let partial = schnorrsig_compute_oracle_attestation(
                     SECP256K1,
                     private_key,

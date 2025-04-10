@@ -54,6 +54,12 @@ impl<CU: CryptoUtils> RandIntOracle<CU> {
     }
 }
 
+impl<CU: CryptoUtils> Default for RandIntOracle<CU> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
     fn get_public_key(&self) -> PublicKey {
         self.keys.public_key()

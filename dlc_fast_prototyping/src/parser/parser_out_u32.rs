@@ -76,10 +76,7 @@ impl SimpleOutU32Parser {
 impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
     fn read_input(contract_path: &str) -> Result<ContractInput, Error> {
         // Read input file containing contract JSON into string
-        let contract_input_str = match fs::read_to_string(contract_path) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
+        let contract_input_str = fs::read_to_string(contract_path)?;
 
         // Deserialize contract input
         let contract_input: ContractInput = match serde_json::from_str(&contract_input_str) {

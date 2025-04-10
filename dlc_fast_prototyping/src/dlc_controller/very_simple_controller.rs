@@ -22,7 +22,6 @@ use std::io::Error;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::u32::MAX;
 
 // To use different implementations of DlcStorage and MyDlcComputation for this specific controller,
 // just change the type aliases below
@@ -68,7 +67,7 @@ where
         let cp_adaptors = Vec::new();
         let total_collateral: types::PayoutT = 0;
         let oracle_attestation = OracleAttestation {
-            outcome: OutcomeU32::from(MAX),
+            outcome: OutcomeU32::from(u32::MAX),
             attestation: SecretKey::new(&mut rand::thread_rng()),
         };
 

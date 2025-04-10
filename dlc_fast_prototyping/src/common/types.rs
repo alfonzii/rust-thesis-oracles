@@ -223,7 +223,7 @@ impl ContractDescriptor {
         let first_interval = &self.payout_intervals[0];
         let first_pt = first_interval
             .payout_points
-            .get(0)
+            .first()
             .ok_or(ContractError::InvalidIntervalPoints)?;
         if first_pt.event_outcome != 0 {
             return Err(ContractError::InvalidFirstOutcome);

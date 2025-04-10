@@ -58,7 +58,7 @@ where
     fn clone(&self) -> Self {
         StorageElement {
             cet: self.cet.clone(),
-            anticipation_point: self.anticipation_point.clone(),
+            anticipation_point: self.anticipation_point,
             my_adaptor_signature: self.my_adaptor_signature.clone(),
             cp_adaptor_signature: self.cp_adaptor_signature.clone(),
         }
