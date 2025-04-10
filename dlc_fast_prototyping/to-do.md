@@ -22,11 +22,11 @@
 - ❔velmi casto v kode pouzivam ako trait parameter *AdaptorSignatureScheme* pricom realne, jedina vec ktoru potrebujem odtial tak je *ASigS::AdaptorSignature*. Nejde to urobit nejak inak, viac "krajsie" ?
 
 ## [MUST HAVE]
-- (in progress) zjednotit nejakym sposobom runparams, constants atd.
-    + k tomu takisto treba potom premysliet kde a jak sa budu nastavovat parametre behu, zeby to slo nejak jednoducho uzivatelsky menit. Teraz to mam cez tie cfg features, ale nie vsetko, typy niektore napr. CryptoUtils, parser a oracle sa nastavuju jak typy. No proste to premysliet aj toto jak to nejak zjednotit zeeby to slo lahko menit parametre a zeby lahko slo spustat z "user" hladiska.
-- overit spravnost schnorr verify
+- ✅ ~~zjednotit nejakym sposobom runparams, constants atd.~~
+    + ~~k tomu takisto treba potom premysliet kde a jak sa budu nastavovat parametre behu, zeby to slo nejak jednoducho uzivatelsky menit. Teraz to mam cez tie cfg features, ale nie vsetko, typy niektore napr. CryptoUtils, parser a oracle sa nastavuju jak typy. No proste to premysliet aj toto jak to nejak zjednotit zeeby to slo lahko menit parametre a zeby lahko slo spustat z "user" hladiska.~~ _(constants a runparams su zjednotene do `config.rs` a ostatne sa musia spustat cez features)_
+- 🔄 (in progress) pozriet co sa podpisuje pri realnom BTC pouziti v tx (ja aktualne totiz podpisujem iba String, co vsak nemusi byt dobra analogia 1:1 ku btc tx, ak sa nepodpisuje priamo btc tx), a pripadne to zmenit tak, aby to viac odrazalo skutocnost. Mozno podpisujeme len nejaky hash abo nieco take
+- 🔄 (in progress) overit spravnost schnorr verify
 - pozriet licenciu na vykradnuteho schnorra (MAL BY TO BYT MIT A TEDA CAJK, ALE POZRIET ESTE)
-- pozriet co sa podpisuje pri realnom BTC pouziti v tx (ja aktualne totiz podpisujem iba String, co vsak nemusi byt dobra analogia 1:1 ku btc tx, ak sa nepodpisuje priamo btc tx), a pripadne to zmenit tak, aby to viac odrazalo skutocnost. Mozno podpisujeme len nejaky hash abo nieco take
 - vyriesit compile warnings
     + k tomu takisto spustit `clippy` a vyriesit aj jeho
 - vyriesit a vymazat **TODO komentare** z kodu
@@ -51,7 +51,7 @@
     + globalny secp kontext
 - `common`
     - `constants.rs`
-        + ✅ ~~nejak zgeneralizovat "Alice" a "Bob", aby to nezaviselo len na jednom stringu (to je aj vo `very_simple_controller.rs`)~~ _pouzivame Offerer & Accepter_
+        + ✅ ~~nejak zgeneralizovat "Alice" a "Bob", aby to nezaviselo len na jednom stringu (to je aj vo `very_simple_controller.rs`)~~ _(pouzivame Offerer & Accepter)_
         + ✅ ~~eventualne nastavit `MAX_OUTCOME` niekde inde v kode, aby sme mohli parametrizovat iba pomocou `NB_DIGITS`~~
     - `error.rs`
         + po ukonceni refactoringu ak nepotrebujem unused errory tak ich vymazat

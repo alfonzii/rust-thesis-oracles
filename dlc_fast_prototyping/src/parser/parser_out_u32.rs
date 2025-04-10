@@ -99,7 +99,10 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
     ) -> Result<ParsedContract<OutcomeU32>, Error> {
         // Call validation first
         contract_input.validate().map_err(|e| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{:?}", e))
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("{:?} error - {} ", e, e),
+            )
         })?;
 
         // At this point, if we have reached here, we can safely assume that the contract is valid

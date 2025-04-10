@@ -6,7 +6,12 @@ compile_error!("Features 'ecdsa' and 'schnorr' cannot be enabled at the same tim
 compile_error!("Either feature 'ecdsa' or 'schnorr' must be enabled.");
 
 pub mod constants {
-    pub const NB_DIGITS: u8 = 3; // number of maximum digits that represent outcome
+    // Changeable
+    pub const NB_DIGITS: u8 = 14; // number of maximum digits that represent outcome
+    pub const CONTRACT_INPUT_PATH: &str =
+        "./input_contracts/sample_contracts/reduced_contract_input.json";
+
+    // NOT TO CHANGE!
     pub const NB_OUTCOMES: u32 = 1 << NB_DIGITS;
     pub const MAX_OUTCOME: u32 = NB_OUTCOMES - 1;
     pub const ZERO_OUTCOME_ATP: u32 = 1000; // random value bigger than NB_DIGITS representing zero outcome anticipation point value calc
@@ -17,10 +22,6 @@ pub mod constants {
             panic!("NB_DIGITS must be less than or equal to 32");
         }
     };
-
-    // main
-    pub const CONTRACT_INPUT_PATH: &str =
-        "./input_contracts/sample_contracts/simple_contract_input.json"; // "./input_contracts/test_contracts/noncontinuous_input.json";
 }
 
 // adaptor signatures optimization tu moze byt ako nejaky flag napr, bud ako constant, runparam alebo ako feature. to je jedno, up to decision

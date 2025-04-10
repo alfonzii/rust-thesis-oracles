@@ -59,16 +59,16 @@ impl<CU: CryptoUtils> Oracle for RandIntOracle<CU> {
         self.keys.public_key()
     }
 
-    fn get_event_announcement(&self, event_id: u32) -> OracleAnnouncement {
+    fn get_event_announcement(&self, _event_id: u32) -> OracleAnnouncement {
         OracleAnnouncement {
             public_key: self.keys.public_key(),
             public_nonce: self.nonces.public_key(),
-            next_attestation_time: 0,
+            _next_attestation_time: 0,
         }
     }
 
     /// Returns attestation structure with already moduled outcome with NB_OUTCOMES and attestation secret key
-    fn get_event_attestation(&self, event_id: u32) -> OracleAttestation {
+    fn get_event_attestation(&self, _event_id: u32) -> OracleAttestation {
         OracleAttestation {
             outcome: self.outcome,
             attestation: self

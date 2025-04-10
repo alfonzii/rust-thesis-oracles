@@ -1,0 +1,53 @@
+{
+    "offerCollateral": 100000000,
+    "acceptCollateral": 100000000,
+    "feeRate": 2,
+    "contractInfo": 
+    {
+    "contractDescriptor": {
+        "payoutIntervals": [
+            {
+                "payoutPoints": [
+                    {
+                    "eventOutcome": 0,
+                    "outcomePayout": 0
+                    },
+                    {
+                    "eventOutcome": 3192,
+                    "outcomePayout": 0
+                    }
+                ]
+            },
+            {
+                "payoutPoints": [
+                    {
+                    "eventOutcome": 3192,
+                    "outcomePayout": 0
+                    },
+                    {
+                    "eventOutcome": 13192,
+                    "outcomePayout": 200000000
+                    }
+                ]
+            },
+            {
+                "payoutPoints": [
+                    {
+                    "eventOutcome": 13192,
+                    "outcomePayout": 200000000
+                    },
+                    {
+                    "eventOutcome": 16383,
+                    "outcomePayout": 200000000
+                    }
+                ]
+            }
+        ]
+    },
+    "oracle": {
+        "publicKey": "020d829c1cc556aa59060df5a9543c5357199ace5db9bcd5a8ddd6ee2fc7b6d174",
+        "eventId": "btcusd1707120297",
+        "nbDigits": 14
+    }
+    }
+}

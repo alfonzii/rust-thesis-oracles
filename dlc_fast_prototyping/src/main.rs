@@ -26,9 +26,6 @@ mod parser;
 // TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
 // alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
 
-const ALICE: &str = "Alice";
-const BOB: &str = "Bob";
-
 mod bench {
     use std::time::Duration;
     #[cfg(feature = "enable_benchmarks")]
@@ -154,14 +151,12 @@ fn main() {
     let mut controller_alice =
         bench::measure_step("Construct controller (Alice)", &mut steps, || {
             VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
-                ALICE,
                 ControllerType::Offerer,
                 Arc::clone(&oracle),
             )
         });
     let mut controller_bob = bench::measure_step("Construct controller (Bob)", &mut steps, || {
         VerySimpleController::<MyAdaptorSignatureScheme, MyCryptoUtils, MyOracle>::new(
-            BOB,
             ControllerType::Accepter,
             Arc::clone(&oracle),
         )

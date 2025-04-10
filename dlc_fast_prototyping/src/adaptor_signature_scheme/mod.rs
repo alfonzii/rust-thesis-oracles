@@ -24,6 +24,7 @@ pub trait AdaptorSignatureScheme {
         attestation: &SecretKey,
     ) -> Self::Signature;
 
+    #[allow(dead_code)] // delete if used
     fn extract(
         signature: &Self::Signature,
         adaptor_signature: &Self::AdaptorSignature,

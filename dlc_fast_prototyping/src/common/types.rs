@@ -14,7 +14,7 @@ pub type Attestation = SecretKey;
 // Other
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)
 pub type PayoutT = u64; // Integer type for payout values (in satoshis). If will be using Bitcoin API, then Amount will be correct type
-pub type ParsedContract<O: Outcome> = Vec<(O, PayoutT)>; // (outcome, payout) pairs.. TODO: nejak to treba vymysliet aby to slo urobit
+pub type ParsedContract<O: Outcome> = Vec<(O, PayoutT)>; // Compiler checker says this might be implemented in future versions, so we leave it like this
                                                          // TODO: za predpokladu, ze ParsedContract bude obsahovat len OutcomeU32, tak by to mohol byt iba Vec<u32>
 
 /// The final Bitcoin transaction or any other on-chain transaction type
@@ -242,7 +242,7 @@ impl ContractDescriptor {
         let last_interval = self.payout_intervals.last().unwrap();
         let last_pt = last_interval
             .payout_points
-            .get(1)
+            .last()
             .ok_or(ContractError::InvalidIntervalPoints)?;
         if last_pt.event_outcome != expected_final_outcome {
             return Err(ContractError::OutcomeRangeMismatch);

@@ -1,4 +1,4 @@
-use crate::common::{self, types, Outcome, OutcomeU32, ParsedContract};
+use crate::common::{self, types, OutcomeU32, ParsedContract};
 use crate::parser::Parser;
 use secp256k1_zkp::{Keypair, PublicKey, SecretKey, SECP256K1};
 
@@ -24,8 +24,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::u32::MAX;
 
-// Not using those yet. Lets see in future, how will different controllers be programmed and how will
-// this change. Not sure, if we actually want to allow changing of Storage and Computation for concrete controller implementations.
+// To use different implementations of DlcStorage and MyDlcComputation for this specific controller,
+// just change the type aliases below
 type MyDlcStorage<T> = SimpleArrayStorage<T>;
 type MyDlcComputation<A, C> = UnifiedDlcComputation<A, C>;
 
@@ -35,18 +35,16 @@ where
     CU: CryptoUtils,
     O: Oracle,
 {
-    name: String,
     controller_type: ControllerType,
     oracle: Arc<O>,
     keypair: Keypair,
-    storage: SimpleArrayStorage<ASigS>,
+    storage: MyDlcStorage<ASigS>,
     parsed_contract: ParsedContract<OutcomeU32>,
     total_collateral: types::PayoutT,
 
     cp_verification_key: PublicKey,
     cp_adaptors: Vec<ASigS::AdaptorSignature>,
     oracle_attestation: OracleAttestation,
-    next_attestation_time: u32,
 
     _phantom_asig: PhantomData<ASigS>,
     _phantom_cu: PhantomData<CU>,
@@ -59,9 +57,9 @@ where
     CU: CryptoUtils + Sync,
     O: Oracle,
 {
-    fn new(name: &str, ctype: ControllerType, oracle: Arc<O>) -> Self {
+    fn new(ctype: ControllerType, oracle: Arc<O>) -> Self {
         let keypair = Keypair::new(SECP256K1, &mut rand::thread_rng());
-        let storage = SimpleArrayStorage::new(NB_OUTCOMES);
+        let storage = MyDlcStorage::new(NB_OUTCOMES);
         let parsed_contract = ParsedContract::new();
         let cp_verification_key =
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001")
@@ -73,10 +71,8 @@ where
             outcome: OutcomeU32::from(MAX),
             attestation: SecretKey::new(&mut rand::thread_rng()),
         };
-        let next_attestation_time = 0;
 
         Self {
-            name: name.to_string(),
             controller_type: ctype,
             oracle,
             keypair,
@@ -86,7 +82,6 @@ where
             cp_verification_key,
             cp_adaptors,
             oracle_attestation,
-            next_attestation_time,
             _phantom_asig: PhantomData,
             _phantom_cu: PhantomData,
         }

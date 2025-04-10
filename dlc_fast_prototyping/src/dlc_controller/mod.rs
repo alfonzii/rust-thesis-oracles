@@ -21,7 +21,7 @@ where
     O: Oracle,
 {
     /// Creates a new controller with a given name and oracle.
-    fn new(name: &str, ctype: ControllerType, oracle: Arc<O>) -> Self;
+    fn new(ctype: ControllerType, oracle: Arc<O>) -> Self;
 
     /// Loads DLC input from a file.
     fn load_input(&mut self, input_path: &str) -> Result<(), Error>;
