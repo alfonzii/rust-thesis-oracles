@@ -21,3 +21,6 @@ Cargo.lock
 
 # Ignore rustfmt configuration file
 rustfmt.toml
+
+# Ignore notes that are not part of the project but are useful for the developer
+notes/

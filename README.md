@@ -1,2 +1,2 @@
-# rust-thesis-oracles
-Implementation of paper "Cryptographic Oracle-Based Conditional Payments"
+# Dlc-Fast-Prototyping
+Lightweight framework for fast prototyping and benchmarking of Discreet Log Contracts (DLCs) in Bitcoin.
