@@ -18,7 +18,7 @@ pub struct OracleAnnouncement {
 
 pub struct OracleAttestation {
     pub outcome: OutcomeU32, // INFO: Oracle will always return outcome in an integer form. We call for it just once, so if we need, we can convert it for negligible perf cost
-    pub attestation: SecretKey, // TODO: asi z toho urobit pole, lebo ich rust-dlc algoritmus pouziva prave "pocetbitov" atestacii
+    pub attestation: SecretKey,
 }
 
 mod rand_int_oracle;

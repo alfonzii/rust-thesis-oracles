@@ -88,7 +88,8 @@ where
 
     fn load_input(&mut self, input_path: &str) -> Result<(), Error> {
         let contract_input = MyParser::read_input(input_path)?;
-        self.total_collateral = contract_input.accept_collateral + contract_input.offer_collateral; // TODO: we created this small hack where we take out total_collateral instead of whole ContractInput. However, it can be changed, but for now it seems to be fine.
+        // We created this small hack where we take out total_collateral instead of whole ContractInput. However, it can be changed, but for now it seems to be fine.
+        self.total_collateral = contract_input.accept_collateral + contract_input.offer_collateral;
         self.parsed_contract = MyParser::parse_contract_input(contract_input)?;
         Ok(())
     }
@@ -145,26 +146,7 @@ where
     fn wait_attestation(&mut self) -> Result<(), Error> {
         self.oracle_attestation = self.oracle.get_event_attestation(0);
 
-        // TODO: ponizie kodu sa zbavit, je to hardcoded optimisticka optimalizacia. nie len ze je zbytocna na default run, este je aj chybna
-        // (ona totiz pocita s mock setupom, ale ked mame payouts nie vzdy rastuce a v polovici sa preklapajuce, tak nefunguje dobre)
-        // ak chceme optimisticku adaptor optimalizaciu, tak dat osobitne nejaku funkciu napr. `has_winning_payout()` do `fun.rs`
-        // a podla toho rozhodnut potom co dalej. By default by sme vsak nemali mat optimisticku optimalizaciu a mali by byt
-        // schopni broadcastovat obidvaja.
-
-        /*
-        if (self.name == "Alice" && self.oracle_attestation.outcome.get_value() < NB_OUTCOMES / 2)
-            || (self.name == "Bob"
-                && self.oracle_attestation.outcome.get_value() >= NB_OUTCOMES / 2)
-        {
-            true
-        } else {
-            println!(
-                "{} did not win in DLC. It doesn't broadcast anything.",
-                self.name
-            );
-            false
-        }
-        */
+        // In future, here might be relevant adaptor optimization, ideally as some function eg. `has_winning_payout()` in `fun.rs`
 
         Ok(())
     }

@@ -15,7 +15,7 @@ pub type Attestation = SecretKey;
 pub type Cet = String; // Contract Execution Transaction (esentially not signed Tx)
 pub type PayoutT = u64; // Integer type for payout values (in satoshis). If will be using Bitcoin API, then Amount will be correct type
 pub type ParsedContract<O: Outcome> = Vec<(O, PayoutT)>; // Compiler checker says this might be implemented in future versions, so we leave it like this
-                                                         // TODO: za predpokladu, ze ParsedContract bude obsahovat len OutcomeU32, tak by to mohol byt iba Vec<u32>
+                                                         // It could be made as Vec<PayoutT> if we would consider just OutcomeU32, but we made it more robust, so it could be implemented also with different types of outcomes (eg. OutcomeBinStr).
 
 /// The final Bitcoin transaction or any other on-chain transaction type
 /// that will be broadcasted after finalization.
@@ -63,7 +63,7 @@ pub trait Outcome {
     fn is_zero(&self) -> bool;
 
     /// Serialize this Outcome into bytes to store or transmit.
-    fn serialize(&self) -> Vec<u8>; // TODO: will need to remake to [u8; N], because we will be creating lots of small vectors. Instead, we can cap size of String to be equal to size of u32 and then, we know how big to return.
+    fn serialize(&self) -> Vec<u8>;
 }
 
 // A simple integer-based outcome.
@@ -137,7 +137,6 @@ impl Outcome for OutcomeBinStr {
 
 impl From<String> for OutcomeBinStr {
     fn from(value: String) -> Self {
-        // TODO: theoretically, bcs of performance, if we can assume correct string, doesn't have to be here
         if !value.chars().all(|c| c == '0' || c == '1') {
             panic!("OutcomeBinStr can only contain '0' and '1' characters.");
         }
@@ -304,7 +303,7 @@ impl PayoutPoint {
 pub struct OracleInput {
     pub public_key: PublicKey,
     pub event_id: String,
-    pub nb_digits: u8, // TODO: asi potom tiez prerobit na usize
+    pub nb_digits: u8,
 }
 
 impl OracleInput {
@@ -316,5 +315,3 @@ impl OracleInput {
         Ok(())
     }
 }
-
-// TODO: written here but applies to whole project! might think about if renaming isnt needed. we are using whole names like public_key, private_key... maybe using just priv_key and pub_key would be enough and more readable.

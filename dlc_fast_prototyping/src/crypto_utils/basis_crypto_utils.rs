@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use bitcoin::secp256k1;
 use secp256k1_zkp::{Error, PublicKey, Scalar, SecretKey};
 
 use crate::common::types;
@@ -53,7 +54,7 @@ impl CryptoUtils for BasisCryptoUtils {
         instance
     }
 
-    // TODO: will throw error if no bit is set in outcome (we catch zero outcome, so there must be some other problem like bigger number than 2^NB_DIGITS and it's first NB_DIGITS bits are not set)
+    // Will throw error if no bit is set in outcome (we catch zero outcome, so there must be some other problem like bigger number than 2^NB_DIGITS and it's first NB_DIGITS bits are not set)
     fn compute_anticipation_point(
         &self,
         outcome: &impl types::Outcome,
@@ -81,7 +82,7 @@ impl CryptoUtils for BasisCryptoUtils {
         Ok(combined)
     }
 
-    // TODO: same as atp_point, will throw error if no bit is set in outcome
+    // Same as atp_point, will throw error if no bit is set in outcome (we throw same error to represent no bit set - InvalidPublicKeySum)
     fn compute_attestation(
         &self,
         private_key: &SecretKey,
@@ -90,19 +91,18 @@ impl CryptoUtils for BasisCryptoUtils {
     ) -> Result<types::Attestation, Error> {
         // If the outcome is zero, use exceptional anticipation point.
         if outcome.is_zero() {
-            let attestation_zero = schnorrsig_compute_oracle_attestation(
+            return schnorrsig_compute_oracle_attestation(
                 SECP256K1,
                 private_key,
                 private_nonce,
                 &OutcomeU32::from(ZERO_OUTCOME_ATP),
             );
-            return attestation_zero;
         }
 
         // Else if outcome is not zero: Find first non-zero outcome bit
         let first_index = (0..NB_DIGITS)
             .find(|&i| outcome.get_bit(i))
-            .ok_or(Error::InvalidGenerator)?;
+            .ok_or(secp256k1::Error::InvalidPublicKeySum)?;
 
         // Use the partial attestation for the first set bit as the initial value.
         let mut combined = schnorrsig_compute_oracle_attestation(
@@ -190,5 +190,30 @@ mod tests {
             "Attestation computation should succeed"
         );
         let _attestation = attestation_res.unwrap();
+    }
+
+    #[test]
+    fn test_compute_anticipation_point_too_large() {
+        let utils = create_dummy_utils();
+        // NB_DIGITS-bits limit exceeded:
+        let outcome = OutcomeU32::from(1 << NB_DIGITS);
+        let res = utils.compute_anticipation_point(&outcome);
+        assert!(res.is_err(), "Expected error for too-large outcome");
+    }
+
+    #[test]
+    fn test_compute_attestation_too_large() {
+        let secp = Secp256k1::new();
+        let sk = SecretKey::from_slice(&[2u8; 32]).unwrap();
+        let nonce = SecretKey::from_slice(&[3u8; 32]).unwrap();
+        let pk = PublicKey::from_secret_key(&secp, &sk);
+        let utils = BasisCryptoUtils::new(&pk, &pk);
+
+        let outcome = OutcomeU32::from(1 << NB_DIGITS);
+        let attestation_res = utils.compute_attestation(&sk, &nonce, &outcome);
+        assert!(
+            attestation_res.is_err(),
+            "Expected error for too-large outcome"
+        );
     }
 }

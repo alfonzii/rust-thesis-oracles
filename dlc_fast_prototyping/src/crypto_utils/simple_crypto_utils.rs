@@ -37,5 +37,3 @@ impl CryptoUtils for SimpleCryptoUtils {
         schnorrsig_compute_oracle_attestation(SECP256K1, private_key, private_nonce, outcome)
     }
 }
-
-// TODO: this file needs to be merged with secp_utils.rs, The current structure is not optimal.

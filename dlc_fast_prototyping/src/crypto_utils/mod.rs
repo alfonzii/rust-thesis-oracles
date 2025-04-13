@@ -8,6 +8,7 @@ use crate::common::types;
 // By doing this, it will be ensured, that both client and oracle use same crypto utility to cumpute anticipation point and to compute attestation on oracle side.
 
 // DISCLAIMER: one thing to bear in mind is, that both computation of anticipation point and attestation must use equivalent algorithms.
+// This means, CryptoUtils must be same on Oracle and client side, should this project ever be extended to more than just benchmarking usecase.
 
 pub trait CryptoUtils {
     fn new(public_key: &PublicKey, public_nonce: &PublicKey) -> Self
@@ -30,6 +31,3 @@ pub trait CryptoUtils {
 pub mod basis_crypto_utils;
 pub mod secp_utils;
 pub mod simple_crypto_utils;
-
-// TODO: mozno by som to mal robit tak, ze parametre necham normalne typy take ake sa pouzivaju, ze nebudem davat types::dacodaco, lebo aj tak su v napovede nazvy lokalnych parametrov (ako public_key, poublic_nonce, outcome).
-// ale return by som nechal otypovany aliasom, pretoze return tam neni nazov premmenj/parametru, tak aby bolo z aliasu jasne o aky typ ide. Just saying

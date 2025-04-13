@@ -23,9 +23,6 @@ mod dlc_storage;
 mod oracle;
 mod parser;
 
-// TODO: spisat dakde ze co s cim jak suvisi a interaguje (v ramci tych modulov/typov), ze napr. CryptoUtils musi byt rovnaky na strane clienta a Oracle
-// alebo trebarz ze DlcComputation a DlcStorage musia byt specificke pre Controller, tak budu napr. v jeho implementaciii a nemozeme menit ich, iba cely DlcController... atd
-
 mod bench {
     use std::time::Duration;
     #[cfg(feature = "enable_benchmarks")]

@@ -91,7 +91,7 @@ where
         cp_adaptors: &[ASigS::AdaptorSignature],
         storage_elements_vec: &[StorageElement<ASigS>],
     ) -> bool {
-        // Check lengths (TODO: ak pouzijem asig relevant optimization tak toto asi nebude platit)
+        // Check lengths (ATTENTION: If we were to use relevant adaptor signature optimization, then this would probably not hold true)
         assert_eq!(
             cp_adaptors.len(),
             storage_elements_vec.len(),

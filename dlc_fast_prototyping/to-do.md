@@ -26,10 +26,11 @@
     + ~~k tomu takisto treba potom premysliet kde a jak sa budu nastavovat parametre behu, zeby to slo nejak jednoducho uzivatelsky menit. Teraz to mam cez tie cfg features, ale nie vsetko, typy niektore napr. CryptoUtils, parser a oracle sa nastavuju jak typy. No proste to premysliet aj toto jak to nejak zjednotit zeeby to slo lahko menit parametre a zeby lahko slo spustat z "user" hladiska.~~ _(constants a runparams su zjednotene do `config.rs` a ostatne sa musia spustat cez features)_
 - 🔄 (in progress) pozriet co sa podpisuje pri realnom BTC pouziti v tx (ja aktualne totiz podpisujem iba String, co vsak nemusi byt dobra analogia 1:1 ku btc tx, ak sa nepodpisuje priamo btc tx), a pripadne to zmenit tak, aby to viac odrazalo skutocnost. Mozno podpisujeme len nejaky hash abo nieco take
 - 🔄 (in progress) overit spravnost schnorr verify
-- pozriet licenciu na vykradnuteho schnorra (MAL BY TO BYT MIT A TEDA CAJK, ALE POZRIET ESTE)
+- 🔄 (in progress) pozriet licenciu na vykradnuteho schnorra
+    + schnorr je OK, da sa do suboru licencia, ale netreba aby bola licencia na cele repo? copy-paste je sice iba `secp_utils.rs`, ale niektore casti su podobne, napriklad inputy su osekane, oracle ma tiez podobny interface
 - ✅ ~~vyriesit compile warnings~~
     + ~~k tomu takisto spustit `clippy` a vyriesit aj jeho~~
-- vyriesit a vymazat **TODO komentare** z kodu
+- ✅ ~~vyriesit a vymazat **TODO komentare** z kodu~~
 - rozumne okomentovat kod
 - porobit testy tam, kde to dava zmysel
     + create tests for adaptor signatures, that pass and fail on verification or also some other parts of protocol
@@ -39,6 +40,7 @@
 - validacia input -> ked tam dodam nejaky dalsi member do toho payoutPoints medzi eventOutcome a outcomePayout, tak to funguje aj tak. A to by ale nemalo
 - asig optimization (relevant)
 - do benchmark run dodat aj mensie funkcie z `init_storage()` a `verify_adaptors()` (sice to mam v osobitnom benchmarku tieto mensie funkcie, ale neni to na real datach)
+- renaming refactor? some naming for local variables, some for parameters...
 - eventualne by mi mozno bolo dobre pouzivat XOnlyPublicKey kvoli optimalizacii? Zalezi...
 - ❔caching (nepomoze az tolko ako schnorr asig, ev. staci argumentacia v DP)
 - regtest
@@ -55,12 +57,12 @@
         + ✅ ~~nejak zgeneralizovat "Alice" a "Bob", aby to nezaviselo len na jednom stringu (to je aj vo `very_simple_controller.rs`)~~ _(pouzivame Offerer & Accepter)_
         + ✅ ~~eventualne nastavit `MAX_OUTCOME` niekde inde v kode, aby sme mohli parametrizovat iba pomocou `NB_DIGITS`~~
     - `error.rs`
-        + po ukonceni refactoringu ak nepotrebujem unused errory tak ich vymazat
+        + ✅ ~~po ukonceni refactoringu ak nepotrebujem unused errory tak ich vymazat~~
     - `fun.rs`
         + TODO komentar
         + BTC tx task; rozmysliet realny CET
     - `runparams.rs`
-        + zjednotit parametre task;
+        + ✅ ~~zjednotit parametre task;~~ *(dali sme to do config.rs)*
     - `types.rs`
         + ParsedContract Outcome parameter nejak inak urobit
         + CET bude treba urobit iny alebo aspon rozmysliet aby som mal dobru analogiu so stringom

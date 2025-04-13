@@ -104,3 +104,25 @@ Below is a step-by-step outline followed by 10 new JSON files, each violating ex
 8. test_invalid_interval_points.json – Breaks rule #8 (interval has more/less than 2 points).
 9. test_no_intervals.json – Breaks rule #9 (no intervals present).
 10. test_empty_contract.json – Breaks rule #10 (everything is zero-empty).
+
+**[13.4.2025]**
+`secp_utils.rs` riadok 83 koment - TODO: mozno nejaka optimalizacia
+
+`types.rs` riadok 66 koment - // TODO: will need to remake to [u8; N], because we will be creating lots of small vectors. Instead, we can cap size of String to be equal to size of u32 and then, we know how big to return.
+
+TODOs davaju zmysel, ale nijak ich nebudem zapracovavat. Mozem to spomenut v implementacnej casti DP. Za 1. je velmi otazne, nakolko by realne bol ten samotny overhead pouzitia Vec na male vektory. Za 2. ak pouzijeme basis metodu, tak realne mame iba konstantny (velmi maly) pocet ATPs ktore potrebujeme popocitat, a tam sa tato optimalizacia fakt strati. Za 3. ono by to nebol problem prerobit na arrays, akurat ten navrh pocital aj s moznostou integrovania `rust-dlc` riesenia, a teda je tam aj `OutcomeBinStr`, ze ako outcomy mozu byt binarne stringy (na prefixy, ako to maju oni), tak preto tam je vektor, lebo je variabilna dlzka tych Stringov.
+
+Sumar sumarum, v case programovania sa to zdalo ako mozna dobra optimalizacia, ale uz v tejto faze je to fakt irelevantne.
+
+V commite **Resolve clippy warnings** mam este neporiesene TODOs, takze ak by sme ich chceli pozriet, tak tu.
+
+
+
+Copy-pasta z `fun.rs`, pretoze potrebujem povyhadzovat TODOs nech to tam nezavadza, ale zaroven myslienky su fajn na uchovanie:
+
+// TODO: asi najleepsie by to bolo potom niekedy prerobit tak, ze CET struct alebo trait by enkapsulovala tieto 2 funkcie, s ohladom na to, ci bude CET typu String alebo realna Bitcoin TX (z btc api).
+// zaroven, ak bude cas, tak sa moze premysliet sposob jak to ukladat, ci ulozit iba CET, ci ulozit iba payout, ci ukladat message a rekonstruovat zbytok... kazdy pristup ma svoje pre a proti
+// aktualne, pre jednoduchost lebo to uz takto mam urobene pouzivam toto ze ulozene mam CETy (tj stringy teraz) a message si vytvaram (avsak toto netrva dlho, len nejak 60 ns, takze zanedbatelne)
+
+// najlepsie asi komprromisne riesenie mi pride, ze je drzat si payout a msg. pretoze msg ked raz vytvorim tak nemusim ho vytvarat znova a zaroven, ak mame namiestoo CET ulozeny len payout tak setrime miestom oproti CET.
+// a volat CET nam treba iba raz, pri finalize a eventualne pri broadcast.
