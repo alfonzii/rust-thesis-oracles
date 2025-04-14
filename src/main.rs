@@ -1,7 +1,7 @@
 // main.rs
 
 use std::sync::Arc;
-#[cfg(feature = "enable_benchmarks")]
+#[cfg(feature = "enable-benchmarks")]
 use std::time::Instant;
 
 use common::{types, FinalizedTx};
@@ -25,10 +25,10 @@ mod parser;
 
 mod bench {
     use std::time::Duration;
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     use std::time::Instant;
 
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     pub fn measure_step<R, F: FnOnce() -> R>(
         label: &str,
         steps: &mut Vec<(String, Duration)>,
@@ -42,7 +42,7 @@ mod bench {
         result
     }
 
-    #[cfg(not(feature = "enable_benchmarks"))]
+    #[cfg(not(feature = "enable-benchmarks"))]
     pub fn measure_step<R, F: FnOnce() -> R>(
         _label: &str,
         _steps: &mut [(String, Duration)],
@@ -53,7 +53,7 @@ mod bench {
     }
 
     // Function to print benchmarking table.
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     pub fn print_table(steps: &Vec<(String, Duration)>, total_time: Duration) {
         println!("\n-------------------------------------------------------------");
         println!("{:<35}{:<15}{:<15}", "STEP", "TIME", "RATIO");
@@ -130,7 +130,7 @@ fn finalized_tx_valid(
 }
 
 fn main() {
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     let start = Instant::now();
 
     let mut steps = Vec::new();
@@ -236,9 +236,9 @@ fn main() {
         assert!(finalized_tx_valid(&finalized_tx, &multisig));
     });
 
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     let total_time = start.elapsed();
-    #[cfg(feature = "enable_benchmarks")]
+    #[cfg(feature = "enable-benchmarks")]
     bench::print_table(&steps, total_time);
 }
 

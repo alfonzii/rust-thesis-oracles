@@ -100,6 +100,5 @@ criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10000);
     targets = bench_create_cet, bench_create_message, bench_compute_anticipation_point, bench_pre_sign, bench_verify_adaptor
-    // targets = bench_compute_anticipation_point
 }
 criterion_main!(benches);

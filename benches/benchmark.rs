@@ -374,11 +374,11 @@ criterion_group! {
 criterion_main!(benches);
 
 /*
-Porovnavali sme crate K256 a secp256k1-zkp
-k256 je napisana plne v Ruste, cize je asi viac memory safe a prenositelna.
-secp256k1 je wrapnuta na Cckovske kniznice.
+We compared the k256 crate and secp256k1-zkp.
+k256 is fully written in Rust, so it is probably more memory safe and portable.
+Secp256k1 is wrapped around C libraries.
 
-Z toho nam vyslo po benchmarkovani, ze secp256k1 je viac nez 4x rychlejsia nez k256, takze budeme pouzivat tuto.
-chceli sme vsak preverit moznost, ci nahodou k256 nebude iba o velmi malicko pomalsia a rozhodli by sme sa pre nu.
-avsak, je pomalsia pomerne o dost.
+From our benchmarking, it turned out that secp256k1 is more than 4 times faster than k256, so we will use this one.
+However, we wanted to check the possibility that k256 might be only slightly slower, and we would decide to go for it because of it's safety and portability benefits.
+But, it is relatively quite a bit slower.
  */

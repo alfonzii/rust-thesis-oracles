@@ -51,7 +51,7 @@ Feature params to run the program
 Further features, might be either on or off
   "parallel-cpt" - parallel computation of anticipation points / adaptor signatures (if off, then serial)
   "parallel-parser" - read and parse input intervals in parallel or serial if off
-  "enable_benchmarks" - enable program to run in benchmark mode
+  "enable-benchmarks" - enable program to run in benchmark mode
 */
 
 // Re-export so that consumers only need to import from config
