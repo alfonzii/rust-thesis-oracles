@@ -38,10 +38,14 @@ pub mod runparams {
     #[cfg(feature = "schnorr")]
     pub type MySignature = secp256k1_zkp::schnorr::Signature;
 
-    // You can also choose among crypto utils, oracles, and parsers.
-    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
-    pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>;
-    pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser;
+    // To use different implementations of CryptoUtils, Oracle, and Parser,
+    // just change the type aliases below.
+    //
+    // If you ever want to use your own implementation of CryptoUtils, Oracle, or Parser,
+    // just implement the respective trait and change the type alias here.
+    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils; // method for computing anticipation points (now either simple or basis)
+    pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>; // oracle implementation
+    pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser; // parser implementation
 }
 
 /*

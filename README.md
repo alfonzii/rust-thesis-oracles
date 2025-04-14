@@ -34,11 +34,18 @@ cargo run --release --no-default-features --features "enable-benchmarks, schnorr
 
 
 ## Additional Configuration
-Parameters that are not controlled via feature flags (e.g., number of outcomes, anticipation point computation method, etc.) are located in:
+Parameters that are not controlled via feature flags are located in:
 ```
 src/config.rs
 ```
-This file is thoroughly commented to make customization easy.
+What can be changed in `config.rs` file is following:
+- Constants
+    + `NB_DIGITS` - number of digits that outcome is using
+    + `CONTRACT_INPUT_PATH` - path to contract from which we will be setting up DLC
+- Type aliases
+    + `MyCryptoUtils` - method how to calculate anticipation points
+    + `MyOracle` - oracle type
+    + `MyParser` - parser type
 
 
 ## Benchmarks
