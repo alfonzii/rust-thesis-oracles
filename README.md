@@ -1,35 +1,97 @@
-# Dlc-Fast-Prototyping
-Lightweight framework for fast prototyping and benchmarking of Discreet Log Contracts (DLCs) in Bitcoin. It allows you to quickly test different configurations and features, such as ECDSA or Schnorr adaptor signatures, and run benchmarks to evaluate performance.
+# DLC Fast Prototyping
+
+**DLC Fast Prototyping** is a lightweight framework for fast experimentation, benchmarking, and development of [Discreet Log Contracts (DLCs)](https://adiabat.github.io/dlc.pdf) on Bitcoin.  
+It allows testing various cryptographic configurations—such as ECDSA vs. Schnorr adaptor signatures—and running detailed benchmarks for performance analysis.
+
 
 ## Prerequisites
-You need Rust installed on your device. Program was tested on `cargo 1.85.0` version.
 
-## How to use
-### Running the Program with Default Configuration
-To run the program with the default configuration (serial execution and ECDSA), simply execute the following command in the root directory:
+- Rust (recommended version: `cargo 1.85.0`)
+- A Unix-like system is recommended (Linux/macOS)
+
+Ensure Rust is installed via [rustup](https://rustup.rs/):
+
+```
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+
+## Running the Program
+### Run with Default Configuration
+To run the program with the default settings (ECDSA + serial execution):
 ```
 cargo run
 ```
+This will execute the DLC setup using serial anticipation point computation and ECDSA adaptor signatures.
 
-### Running the Program with Custom Features
-To customize the configuration, you can use the `--no-default-features` flag, to get rid of ecdsa feature, which is the default flag for our project and specify the desired features. For example, to enable benchmarks, use Schnorr signatures, and enable parallel computation of anticipation points, run:
+### Run with Custom Features
+To test specific configurations (e.g., using Schnorr and enabling parallelism), disable default features and specify the desired ones:
 ```
 cargo run --release --no-default-features --features "enable-benchmarks, schnorr, parallel-cpt"
 ```
-This disables the default ECDSA feature and enables the specified features. We also use `--release` for better performance.
+- `--release` enables compiler optimizations for realistic performance.
+- Default feature is `ecdsa`; use `--no-default-features` to exclude it.
 
-### Additional Configuration
-Some parameters cannot be changed via features and are defined in the `config.rs` file. This file is thoroughly commented to help you understand and modify these parameters as needed.
+
+## Additional Configuration
+Parameters that are not controlled via feature flags (e.g., number of outcomes, anticipation point computation method, etc.) are located in:
+```
+src/config.rs
+```
+This file is thoroughly commented to make customization easy.
+
 
 ## Benchmarks
-If you run program just as is, or with `enable-benchmarks` feature, you will get runtime benchmark of the whole DLC setup and execution. However, at standard situation, there are two functions that stick out, and those are **Init storage** and **Verify adaptors**. As they are more complex, we need to break them down more precisely to see, what takes how long. For that, we have specific benchmarks of functions that those two consist of, and it is in `math-bench.rs`.
+The framework supports both:
+- **End-to-end DLC benchmarks** (via `enable-benchmarks` feature)
+- **Function-specific math microbenchmarks** (via `math-bench.rs`)
 
-For those benchmarks, it's irrelevant if we use any additional features other than `ecdsa` or `schnorr`, as we are benchmarking just one function, not whole run. For example, to run with schnorr, we can run it like:
+### Run High-Level Benchmarks
+To measure overall runtime of DLC creation and execution:
+```
+cargo run --release --features "enable-benchmarks"
+```
+Two key runtime bottlenecks typically emerge:
+
+- `Init storage`
+
+- `Verify adaptors`
+
+These are analyzed further using fine-grained function-level benchmarking.
+
+### Run Microbenchmarks (Function-level)
+
+To benchmark individual functions in isolation:
 ```
 cargo bench --bench math-bench --no-default-features --features "schnorr"
 ```
+This allows testing core cryptographic primitives.
 
-While developing this framework, we encountered several decision problems. To decide which way to go, we sometimes had to benchmark existing solutions or multiple options and we then chose, based on our criteria, which suits best. All of those are in `benchmark.rs` file. It can be also run, like:
+> Only ecdsa or schnorr features are relevant for function-level benchmarks.
+
+### Run Comparative Decision Benchmarks
+
+During development, several alternative designs were benchmarked to guide decisions. These comparisons are available in:
 ```
-cargo bench --bench math-bench --no-default-features --features "schnorr"
+benches/benchmark.rs
 ```
+You can run them similarly:
+```
+cargo bench --bench benchmark --no-default-features --features "schnorr"
+```
+
+## About
+
+This framework was developed as part of the thesis project _“Practical Oracle-Based Bitcoin Payments”_.
+The goal was to create a flexible, modular environment for evaluating and optimizing DLC protocol components—particularly focusing on cryptographic performance and protocol design.
+
+For more details on the design rationale and performance analysis, please refer to the [thesis](https://google.com).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+Parts of the code are adapted from MIT-licensed projects, including:
+- [`rust-dlc`](https://github.com/p2pderivatives/rust-dlc)
+
+See [NOTICE](NOTICE) for full attribution details.
