@@ -32,6 +32,12 @@ cargo run --release --no-default-features --features "enable-benchmarks, schnorr
 - `--release` enables compiler optimizations for realistic performance.
 - Default feature is `ecdsa`; use `--no-default-features` to exclude it.
 
+Already implemented custom features (visible in `Cargo.toml`) to be tried out are:
+- `ecdsa` - ECDSA adaptor signature scheme used
+- `schnorr` - Schnorr adaptor signature scheme used (ECDSA or Schnorr must be used, not both nor neither)
+- `parallel-cpt` - enable parallel computation of anticipation points and adaptor signatures
+- `parallel-parser` - enable parallel creation of `ParsedContract` structure
+- `enable-benchmarks` - enable full end-to-end benchmark thorough whole run of program, showing run time of individual DLC setup steps
 
 ## Additional Configuration
 Parameters that are not controlled via feature flags are located in:
