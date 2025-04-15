@@ -8,12 +8,7 @@ It allows testing various cryptographic configurations—such as ECDSA vs. Schno
 
 - Rust (recommended version: `cargo 1.85.0`)
 - A Unix-like system is recommended (Linux/macOS)
-
-Ensure Rust is installed via [rustup](https://rustup.rs/):
-
-```
-$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+    - or WSL 2 on Windows
 
 
 ## Running the Program
