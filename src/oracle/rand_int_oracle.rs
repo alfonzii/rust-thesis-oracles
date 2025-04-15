@@ -28,8 +28,6 @@ pub struct RandIntOracle<CU: CryptoUtils> {
 // In real situations, we would not have constant `NB_OUTCOMES` available at oracle side, but that wouldn't matter, as oracle
 // don't have to care and we would choose such oracle, that would fit our needs.
 
-// For example,
-
 impl<CU: CryptoUtils> RandIntOracle<CU> {
     pub fn new() -> Self {
         let nonces = Keypair::new(SECP256K1, &mut thread_rng());

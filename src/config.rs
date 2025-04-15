@@ -1,4 +1,7 @@
 // src/config.rs
+
+// In future, "relevant adaptors optimization" could be also implemented here as a constant, runtime parameter, or feature flag. The choice is flexible and depends on the design decision.
+
 #[cfg(all(feature = "ecdsa", feature = "schnorr"))]
 compile_error!("Features 'ecdsa' and 'schnorr' cannot be enabled at the same time.");
 
@@ -6,28 +9,26 @@ compile_error!("Features 'ecdsa' and 'schnorr' cannot be enabled at the same tim
 compile_error!("Either feature 'ecdsa' or 'schnorr' must be enabled.");
 
 pub mod constants {
-    // Changeable
-    pub const NB_DIGITS: u8 = 14; // number of maximum digits that represent outcome
+    // Configurable constants
+    pub const NB_DIGITS: u8 = 14; // Number of digits representing an outcome
     pub const CONTRACT_INPUT_PATH: &str =
         "./input_contracts/sample_contracts/reduced_contract_input.json";
 
-    // NOT TO CHANGE!
-    pub const NB_OUTCOMES: u32 = 1 << NB_DIGITS;
-    pub const MAX_OUTCOME: u32 = NB_OUTCOMES - 1;
-    pub const ZERO_OUTCOME_ATP: u32 = 1000; // random value bigger than NB_DIGITS representing zero outcome anticipation point value calc
+    // Fixed constants (do not modify)
+    pub const NB_OUTCOMES: u32 = 1 << NB_DIGITS; // Total number of possible outcomes
+    pub const MAX_OUTCOME: u32 = NB_OUTCOMES - 1; // Maximum possible outcome value
+    pub const ZERO_OUTCOME_ATP: u32 = 1000; // Arbitrary value greater than NB_DIGITS, used as a zero outcome anticipation point value
 
     const _: () = {
-        // we disallow more than 32 digits, because we represent outcome with u32.
+        // Ensure NB_DIGITS does not exceed 32, as outcomes are represented using u32.
         if NB_DIGITS > 32 {
             panic!("NB_DIGITS must be less than or equal to 32");
         }
     };
 }
 
-// adaptor signatures optimization tu moze byt ako nejaky flag napr, bud ako constant, runparam alebo ako feature. to je jedno, up to decision
-
 pub mod runparams {
-    // Use cargo features to select implementations:
+    // Use cargo features to select the appropriate implementation:
     #[cfg(feature = "ecdsa")]
     pub use crate::adaptor_signature_scheme::EcdsaAdaptorSignatureScheme as MyAdaptorSignatureScheme;
     #[cfg(feature = "ecdsa")]
@@ -38,26 +39,26 @@ pub mod runparams {
     #[cfg(feature = "schnorr")]
     pub type MySignature = secp256k1_zkp::schnorr::Signature;
 
-    // To use different implementations of CryptoUtils, Oracle, and Parser,
-    // just change the type aliases below.
+    // To switch between different implementations of CryptoUtils, Oracle, and Parser,
+    // modify the type aliases below.
     //
-    // If you ever want to use your own implementation of CryptoUtils, Oracle, or Parser,
-    // just implement the respective trait and change the type alias here.
-    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils; // method for computing anticipation points (now either simple or basis)
-    pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>; // oracle implementation
-    pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser; // parser implementation
+    // If you want to use a custom implementation of CryptoUtils, Oracle, or Parser,
+    // implement the respective trait and update the type alias here.
+    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils; // Utility for computing anticipation points (currently either simple or basis)
+    pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>; // Oracle implementation
+    pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser; // Parser implementation
 }
 
 /*
-Feature params to run the program
-  "ecdsa" or "schnorr" - type of adaptor signatures scheme to be used (one of them must be used)
+Feature flags to configure the program:
+  - "ecdsa" or "schnorr": Specifies the type of adaptor signature scheme to use (one must be enabled).
 
-Further features, might be either on or off
-  "parallel-cpt" - parallel computation of anticipation points / adaptor signatures (if off, then serial)
-  "parallel-parser" - read and parse input intervals in parallel or serial if off
-  "enable-benchmarks" - enable program to run in benchmark mode
+Additional optional features:
+  - "parallel-cpt": Enables parallel computation of anticipation points or adaptor signatures (serial if disabled).
+  - "parallel-parser": Enables parallel parsing of input intervals (serial if disabled).
+  - "enable-benchmarks": Enables benchmark mode for performance evaluation.
 */
 
-// Re-export so that consumers only need to import from config
+// Re-export constants and runtime parameters for easier access by consumers
 pub use constants::*;
 pub use runparams::*;

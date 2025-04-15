@@ -12,7 +12,7 @@ pub trait Oracle {
 
 pub struct OracleAnnouncement {
     pub public_key: PublicKey,
-    pub public_nonce: PublicKey, // INFO: Prerobil som to na public_nonce namiesto vektoru public_nonces, pretoze v nasom kode nepoouzivame viac noncov ani atestacii. Ak by sme sa nakoniec predsa rozhodli implementovat aj to ich riesenie s digit_decomposition, tak sa nonce aj atestacie prerobia na vector, a v asom pripade budu vraciat [0] prvok.
+    pub public_nonce: PublicKey, // INFO: Converted to a single public_nonce instead of a vector of public_nonces (as in `rust-dlc`), as our code currently uses only one nonce and attestation. If we later decide to implement a digit_decomposition approach, both nonce and attestation fields will be transformed into vectors, with the [0] element serving as the default for our approach.
     pub _next_attestation_time: u32, // unix timestamp, INFO: not in use now
 }
 
