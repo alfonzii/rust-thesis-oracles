@@ -95,6 +95,16 @@ The goal was to create a flexible, modular environment for evaluating and optimi
 
 For more details on the design rationale and performance analysis, please refer to the [thesis](https://google.com).
 
+## Acknowledgments
+
+Special thanks to:
+
+- [@Tibo-lg](https://github.com/Tibo-lg) for his responsiveness, and work on [`rust-dlc`](https://github.com/p2pderivatives/rust-dlc), which laid the foundation for many of the ideas explored here.
+- [@siv2r](https://github.com/siv2r) for implementing Schnorr adaptor signatures in C for `secp256k1-zkp`, and for his help to hasten up building Rust wrappers around them. His support made it possible to focus on the benchmarking framework without being blocked on low-level cryptographic integration.
+
+This project would not have been possible without their help and contributions to the open-source DLC ecosystem.
+
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
