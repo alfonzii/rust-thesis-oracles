@@ -10,9 +10,9 @@ compile_error!("Either feature 'ecdsa' or 'schnorr' must be enabled.");
 
 pub mod constants {
     // Configurable constants
-    pub const NB_DIGITS: u8 = 14; // Number of digits representing an outcome
+    pub const NB_DIGITS: u8 = 18; // Number of digits representing an outcome
     pub const CONTRACT_INPUT_PATH: &str =
-        "./input_contracts/sample_contracts/reduced_contract_input.json";
+        "./input_contracts/sample_contracts/numerical_contract_input.json";
 
     // Fixed constants (do not modify)
     pub const NB_OUTCOMES: u32 = 1 << NB_DIGITS; // Total number of possible outcomes

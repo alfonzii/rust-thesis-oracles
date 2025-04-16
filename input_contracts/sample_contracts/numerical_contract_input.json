@@ -34,11 +34,11 @@
             "payoutPoints": [
                 {
                 "eventOutcome": 60000,
-                "outcomePayout": 200000000
+                "outcomePayout": 100000000
                 },
                 {
                 "eventOutcome": 70000,
-                "outcomePayout": 100000000
+                "outcomePayout": 125000000
                 }
             ]
         },
@@ -46,7 +46,7 @@
             "payoutPoints": [
                 {
                 "eventOutcome": 70000,
-                "outcomePayout": 100000000
+                "outcomePayout": 125000000
                 },
                 {
                 "eventOutcome": 85000,

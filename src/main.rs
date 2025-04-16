@@ -58,6 +58,10 @@ mod bench {
         println!("\n-------------------------------------------------------------");
         println!("{:<35}{:<15}{:<15}", "STEP", "TIME", "RATIO");
         println!("-------------------------------------------------------------");
+
+        let mut alice_time = Duration::new(0, 0);
+        let mut bob_time = Duration::new(0, 0);
+
         for (label, step_dur) in steps {
             let ratio = (step_dur.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
             println!(
@@ -66,13 +70,33 @@ mod bench {
                 format!("{}ms", step_dur.as_millis()),
                 ratio
             );
+
+            if label.to_lowercase().contains("alice") {
+                alice_time += *step_dur;
+            } else if label.to_lowercase().contains("bob") {
+                bob_time += *step_dur;
+            }
         }
+
         println!("-------------------------------------------------------------");
         println!(
             "{:<35}{:<15}{}",
             "TOTAL RUNTIME:",
             format!("{}ms", total_time.as_millis()),
             "100.00%"
+        );
+        println!("-------------------------------------------------------------");
+        println!(
+            "{:<35}{:<15}{:.2}%",
+            "TOTAL ALICE RUNTIME:",
+            format!("{}ms", alice_time.as_millis()),
+            (alice_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0
+        );
+        println!(
+            "{:<35}{:<15}{:.2}%",
+            "TOTAL BOB RUNTIME:",
+            format!("{}ms", bob_time.as_millis()),
+            (bob_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0
         );
         println!("-------------------------------------------------------------");
     }
