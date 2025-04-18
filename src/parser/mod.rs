@@ -1,3 +1,5 @@
+//! Parser implementations for contract inputs.
+
 use crate::common::{types, ContractInput, ParsedContract};
 
 pub trait Parser<Out: types::Outcome> {

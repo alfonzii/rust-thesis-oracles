@@ -8,12 +8,17 @@ use crate::{
 };
 use std::{io::Error, sync::Arc};
 
+/// Role of a DLC participant: Offerer or Accepter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ControllerType {
     Offerer,
     Accepter,
 }
 
+/// Discreet Log Contract controller interface.
+/// Parameterized by adaptor‐signature scheme `ASigS`, crypto engine `CU`, and oracle `O`.
+/// Implements the core protocol steps: initialization, input loading, storage setup,
+/// key/adaptor exchange, verification, attestation handling, and final transaction finalization.
 pub trait DlcController<ASigS, CU, O>
 where
     ASigS: AdaptorSignatureScheme,

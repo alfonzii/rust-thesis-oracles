@@ -13,12 +13,14 @@ use std::marker::PhantomData;
 #[cfg(feature = "parallel-cpt")]
 use rayon::prelude::*;
 
+/// Implements both serial and parallel DLC computation flows depending on `parallel-cpt` feature.
 pub struct UnifiedDlcComputation<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> {
     _phantom1: PhantomData<ASigS>,
     _phantom2: PhantomData<CU>,
 }
 
 impl<ASigS: AdaptorSignatureScheme, CU: CryptoUtils> UnifiedDlcComputation<ASigS, CU> {
+    /// Assemble a single `StorageElement` from its CET, anticipation point, and pre-signature.
     fn create_storage_element(
         cet: types::Cet,
         anticipation_point: PublicKey,

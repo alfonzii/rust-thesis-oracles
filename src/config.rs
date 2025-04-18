@@ -1,5 +1,7 @@
 // src/config.rs
 
+extern crate static_assertions;
+
 // In future, "relevant adaptors optimization" could be also implemented here as a constant, runtime parameter, or feature flag. The choice is flexible and depends on the design decision.
 
 #[cfg(all(feature = "ecdsa", feature = "schnorr"))]
@@ -19,12 +21,9 @@ pub mod constants {
     pub const MAX_OUTCOME: u32 = NB_OUTCOMES - 1; // Maximum possible outcome value
     pub const ZERO_OUTCOME_ATP: u32 = 1000; // Arbitrary value greater than NB_DIGITS, used as a zero outcome anticipation point value
 
-    const _: () = {
-        // Ensure NB_DIGITS does not exceed 32, as outcomes are represented using u32.
-        if NB_DIGITS > 32 {
-            panic!("NB_DIGITS must be less than or equal to 32");
-        }
-    };
+    // compile‑time check NB_DIGITS ≤ 32 (outcomes represented with u32)
+    use static_assertions::const_assert;
+    const_assert!(NB_DIGITS <= 32);
 }
 
 pub mod runparams {
