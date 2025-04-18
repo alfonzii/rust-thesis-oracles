@@ -22,14 +22,16 @@ This will execute the DLC setup using serial anticipation point computation and 
 ### Run with Custom Features
 To test specific configurations (e.g., using Schnorr and enabling parallelism), disable default features and specify the desired ones:
 ```
-cargo run --release --no-default-features --features "enable-benchmarks, schnorr, parallel-cpt"
+cargo run --release --no-default-features --features "enable-benchmarks, schnorr, parallel-cpt, basis-method"
 ```
 - `--release` enables compiler optimizations for realistic performance.
-- Default feature is `ecdsa`; use `--no-default-features` to exclude it.
+- Default features are `ecdsa` and `simple-method`; use `--no-default-features` to exclude them.
 
 Already implemented custom features (visible in `Cargo.toml`) to be tried out are:
 - `ecdsa` - ECDSA adaptor signature scheme used
 - `schnorr` - Schnorr adaptor signature scheme used (ECDSA or Schnorr must be used, not both nor neither)
+- `basis-method` - use basis atp point computation method (faster for most cases)
+- `simple-method` - use simple atp point computation method (more straightforward implementation)
 - `parallel-cpt` - enable parallel computation of anticipation points and adaptor signatures
 - `parallel-parser` - enable parallel creation of `ParsedContract` structure
 - `enable-benchmarks` - enable full end-to-end benchmark thorough whole run of program, showing run time of individual DLC setup steps
@@ -44,7 +46,6 @@ What can be changed in `config.rs` file is following:
     + `NB_DIGITS` - number of digits that outcome is using
     + `CONTRACT_INPUT_PATH` - path to contract from which we will be setting up DLC
 - Type aliases
-    + `MyCryptoUtils` - method how to calculate anticipation points
     + `MyOracle` - oracle type
     + `MyParser` - parser type
 

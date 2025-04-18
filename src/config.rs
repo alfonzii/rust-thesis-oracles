@@ -10,6 +10,12 @@ compile_error!("Features 'ecdsa' and 'schnorr' cannot be enabled at the same tim
 #[cfg(not(any(feature = "ecdsa", feature = "schnorr")))]
 compile_error!("Either feature 'ecdsa' or 'schnorr' must be enabled.");
 
+#[cfg(all(feature = "basis-method", feature = "simple-method"))]
+compile_error!("Features 'basis-method' and 'simple-method' cannot be enabled at the same time.");
+
+#[cfg(not(any(feature = "basis-method", feature = "simple-method")))]
+compile_error!("Either feature 'basis-method' or 'simple-method' must be enabled.");
+
 pub mod constants {
     // Configurable constants
     pub const NB_DIGITS: u8 = 18; // Number of digits representing an outcome
@@ -38,12 +44,18 @@ pub mod runparams {
     #[cfg(feature = "schnorr")]
     pub type MySignature = secp256k1_zkp::schnorr::Signature;
 
+    // CryptoUtils implementation selection via feature flags
+    #[cfg(feature = "basis-method")]
+    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
+
+    #[cfg(feature = "simple-method")]
+    pub type MyCryptoUtils = crate::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
+
     // To switch between different implementations of CryptoUtils, Oracle, and Parser,
     // modify the type aliases below.
     //
     // If you want to use a custom implementation of CryptoUtils, Oracle, or Parser,
     // implement the respective trait and update the type alias here.
-    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils; // Utility for computing anticipation points (currently either simple or basis)
     pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>; // Oracle implementation
     pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser; // Parser implementation
 }
@@ -51,6 +63,7 @@ pub mod runparams {
 /*
 Feature flags to configure the program:
   - "ecdsa" or "schnorr": Specifies the type of adaptor signature scheme to use (one must be enabled).
+  - "basis-method" or "simple-method": Specifies the type of crypto utils implementation to use (one must be enabled).
 
 Additional optional features:
   - "parallel-cpt": Enables parallel computation of anticipation points or adaptor signatures (serial if disabled).
