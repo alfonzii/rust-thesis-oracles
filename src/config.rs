@@ -18,7 +18,7 @@ compile_error!("Either feature 'basis-method' or 'simple-method' must be enabled
 
 pub mod constants {
     // Configurable constants
-    pub const NB_DIGITS: u8 = 18; // Number of digits representing an outcome
+    pub const NB_DIGITS: u8 = 20; // Number of digits representing an outcome
     pub const CONTRACT_INPUT_PATH: &str =
         "./input_contracts/sample_contracts/numerical_contract_input.json";
 
@@ -45,16 +45,16 @@ pub mod runparams {
     pub type MySignature = secp256k1_zkp::schnorr::Signature;
 
     // CryptoUtils implementation selection via feature flags
-    #[cfg(feature = "basis-method")]
-    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
-
     #[cfg(feature = "simple-method")]
     pub type MyCryptoUtils = crate::crypto_utils::simple_crypto_utils::SimpleCryptoUtils;
 
-    // To switch between different implementations of CryptoUtils, Oracle, and Parser,
+    #[cfg(feature = "basis-method")]
+    pub type MyCryptoUtils = crate::crypto_utils::basis_crypto_utils::BasisCryptoUtils;
+
+    // To switch between different implementations of Oracle and Parser,
     // modify the type aliases below.
     //
-    // If you want to use a custom implementation of CryptoUtils, Oracle, or Parser,
+    // If you want to use a custom implementation of Oracle or Parser,
     // implement the respective trait and update the type alias here.
     pub type MyOracle = crate::oracle::RandIntOracle<MyCryptoUtils>; // Oracle implementation
     pub type MyParser = crate::parser::parser_out_u32::SimpleOutU32Parser; // Parser implementation
@@ -63,7 +63,7 @@ pub mod runparams {
 /*
 Feature flags to configure the program:
   - "ecdsa" or "schnorr": Specifies the type of adaptor signature scheme to use (one must be enabled).
-  - "basis-method" or "simple-method": Specifies the type of crypto utils implementation to use (one must be enabled).
+  - "simple-method" or "basis-method": Specifies the type of crypto utils implementation to use (one must be enabled).
 
 Additional optional features:
   - "parallel-cpt": Enables parallel computation of anticipation points or adaptor signatures (serial if disabled).

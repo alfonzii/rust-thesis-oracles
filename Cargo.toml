@@ -32,6 +32,9 @@ harness = false
 name = "math-bench"
 
 [features]
+# default = ["ecdsa", "simple-method"] # uncomment for development to get rid of unused features errors
+baseline = ["ecdsa", "simple-method"]
+
 ecdsa = []
 schnorr = []
 basis-method = []
@@ -39,4 +42,3 @@ simple-method = []
 parallel-cpt = []
 parallel-parser = []
 enable-benchmarks = []
-default = ["ecdsa", "simple-method"]
