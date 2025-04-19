@@ -12,29 +12,31 @@ It allows testing various cryptographic configurations—such as ECDSA vs. Schno
 
 
 ## Running the Program
-### Run with Default Configuration
-To run the program with the default settings (ECDSA + serial execution):
+### Run with Baseline Configuration
+To run the program with the baseline settings (ECDSA + simple method):
 ```
-cargo run
-```
-This will execute the DLC setup using serial anticipation point computation and ECDSA adaptor signatures.
-
-### Run with Custom Features
-To test specific configurations (e.g., using Schnorr and enabling parallelism), disable default features and specify the desired ones:
-```
-cargo run --release --no-default-features --features "enable-benchmarks, schnorr, parallel-cpt, basis-method"
+cargo run --release --features baseline
 ```
 - `--release` enables compiler optimizations for realistic performance.
-- Default features are `ecdsa` and `simple-method`; use `--no-default-features` to exclude them.
+
+This will execute the DLC setup using ECDSA adaptor signatures and simple method for anticipation point computation, all running single-threadly.
+
+### Run with Custom Features
+To test specific configurations (e.g., using Schnorr adaptor signatures, basis method and enabling parallelism), specify the desired ones:
+```
+cargo run --release --features "enable-benchmarks, schnorr, parallel-cpt, basis-method"
+```
 
 Already implemented custom features (visible in `Cargo.toml`) to be tried out are:
-- `ecdsa` - ECDSA adaptor signature scheme used
-- `schnorr` - Schnorr adaptor signature scheme used (ECDSA or Schnorr must be used, not both nor neither)
-- `basis-method` - use basis atp point computation method (faster for most cases)
-- `simple-method` - use simple atp point computation method (more straightforward implementation)
+- `ecdsa` - ECDSA adaptor signature scheme
+- `schnorr` - Schnorr adaptor signature scheme (ECDSA or Schnorr must be used, not both nor neither)
+- `simple-method` - simple atp point computation method (more straightforward implementation)
+- `basis-method` - basis atp point computation method (faster for most cases)
 - `parallel-cpt` - enable parallel computation of anticipation points and adaptor signatures
 - `parallel-parser` - enable parallel creation of `ParsedContract` structure
 - `enable-benchmarks` - enable full end-to-end benchmark thorough whole run of program, showing run time of individual DLC setup steps
+
+> ⚠️ Warning for developers: To get rid of errors in your IDE for not using features, uncomment `default` feature in `Cargo.toml`. If you want to use `schnorr` or `basis-method` for developing purposes, then use `--no-default-feature` flag for successful compilation, to get rid of `ecdsa` and `simple-method` from default, or you can just comment `default` back.
 
 ## Additional Configuration
 Parameters that are not controlled via feature flags are located in:
@@ -58,7 +60,7 @@ The framework supports both:
 ### Run High-Level Benchmarks
 To measure overall runtime of DLC creation and execution:
 ```
-cargo run --release --features "enable-benchmarks"
+cargo run --release --features "enable-benchmarks, [CUSTOM FEATURES]"
 ```
 Two key runtime bottlenecks typically emerge:
 
@@ -72,7 +74,7 @@ These are analyzed further using fine-grained function-level benchmarking.
 
 To benchmark individual functions in isolation:
 ```
-cargo bench --bench math-bench --no-default-features --features "schnorr"
+cargo bench --bench math-bench --features "[CUSTOM FEATURES]"
 ```
 This allows testing core cryptographic primitives.
 
@@ -86,7 +88,7 @@ benches/benchmark.rs
 ```
 You can run them similarly:
 ```
-cargo bench --bench benchmark --no-default-features --features "schnorr"
+cargo bench --bench benchmark --features "[CUSTOM FEATURES]"
 ```
 
 ## About
