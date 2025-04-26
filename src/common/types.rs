@@ -280,15 +280,17 @@ impl ContractDescriptor {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayoutInterval {
-    pub payout_points: Vec<PayoutPoint>,
+    pub payout_points: [PayoutPoint; 2],
 }
 
 impl PayoutInterval {
     pub fn validate(&self, max_payout: NonZeroU64) -> Result<(), ContractError> {
-        // 8: Each interval should have exactly 2 points
+        // 8: Each interval should have exactly 2 points (guarnateed by array length)
+        /*
         if self.payout_points.len() != 2 {
             return Err(ContractError::InvalidIntervalPoints);
         }
+        */
         // Validate each payout point
         for point in &self.payout_points {
             point.validate(max_payout)?;
