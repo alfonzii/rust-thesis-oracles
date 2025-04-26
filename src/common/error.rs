@@ -10,7 +10,6 @@ pub enum ContractError {
     CollateralSumOverflow,
     InvalidPayout,
     TooHighFeeRate,
-    EmptyContract,
     NbDigitsMismatch,
 }
 
@@ -36,7 +35,6 @@ impl std::fmt::Display for ContractError {
                 "outcomePayout cannot exceed sum of offerCollateral + acceptCollateral"
             ),
             ContractError::TooHighFeeRate => write!(f, "feeRate too high (> 25 * 250)"),
-            ContractError::EmptyContract => write!(f, "Contract fields must be non-empty"),
             ContractError::NbDigitsMismatch => {
                 write!(f, "nb_digits in input does not match NB_DIGITS constant")
             }

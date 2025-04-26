@@ -1,6 +1,7 @@
 // src/common/types.rs
 
 use std::fmt;
+use std::num::NonZeroU64;
 use secp256k1_zkp;
 use secp256k1_zkp::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
@@ -172,18 +173,20 @@ impl std::error::Error for OutcomeBinStrParseError {}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContractInput {
-    pub offer_collateral: u64,  // Amount (btc cargo)
-    pub accept_collateral: u64, // Amount (btc cargo)
-    pub fee_rate: u64,
+    pub offer_collateral: NonZeroU64,  // Amount (btc cargo)
+    pub accept_collateral: NonZeroU64, // Amount (btc cargo)
+    pub fee_rate: NonZeroU64,
     pub contract_info: ContractInfo,
 }
 
 impl ContractInput {
     pub fn validate(&self) -> Result<(), ContractError> {
-        // 10: Input contract must be non-empty
+        // 10: Input contract must be non-empty (handled by NonZeroU64)
+        /*
         if self.offer_collateral == 0 || self.accept_collateral == 0 || self.fee_rate == 0 {
             return Err(ContractError::EmptyContract);
         }
+        */
 
         // 6: Collateral must be valid unsigned integer (secured by u64)
         /*if self.offer_collateral < 0 || self.accept_collateral < 0 {
@@ -191,12 +194,12 @@ impl ContractInput {
         }*/
 
         // 7: If feeRate > 25 * 250 => error
-        if self.fee_rate > 25 * 250 {
+        if u64::from(self.fee_rate) > 25 * 250 {
             return Err(ContractError::TooHighFeeRate);
         }
 
         // Validate the rest
-        let sum_collaterals = self.offer_collateral.checked_add(self.accept_collateral)
+        let sum_collaterals = self.offer_collateral.checked_add(self.accept_collateral.into())
             .ok_or(ContractError::CollateralSumOverflow)?;
         self.contract_info.validate(sum_collaterals)?;
 
@@ -212,7 +215,7 @@ pub struct ContractInfo {
 }
 
 impl ContractInfo {
-    pub fn validate(&self, max_payout: u64) -> Result<(), ContractError> {
+    pub fn validate(&self, max_payout: NonZeroU64) -> Result<(), ContractError> {
         self.oracle.validate()?;
         self.contract_descriptor
             .validate(max_payout, self.oracle.nb_digits)?;
@@ -227,7 +230,7 @@ pub struct ContractDescriptor {
 }
 
 impl ContractDescriptor {
-    pub fn validate(&self, max_payout: u64, nb_digits: u8) -> Result<(), ContractError> {
+    pub fn validate(&self, max_payout: NonZeroU64, nb_digits: u8) -> Result<(), ContractError> {
         // 9: must have at least one interval
         if self.payout_intervals.is_empty() {
             return Err(ContractError::MissingIntervals);
@@ -281,7 +284,7 @@ pub struct PayoutInterval {
 }
 
 impl PayoutInterval {
-    pub fn validate(&self, max_payout: u64) -> Result<(), ContractError> {
+    pub fn validate(&self, max_payout: NonZeroU64) -> Result<(), ContractError> {
         // 8: Each interval should have exactly 2 points
         if self.payout_points.len() != 2 {
             return Err(ContractError::InvalidIntervalPoints);
@@ -302,14 +305,14 @@ pub struct PayoutPoint {
 }
 
 impl PayoutPoint {
-    pub fn validate(&self, max_payout: u64) -> Result<(), ContractError> {
+    pub fn validate(&self, max_payout: NonZeroU64) -> Result<(), ContractError> {
         // 5: outcomePayout must be non-negative (already guaranteed by u64)
         /*if self.outcome_payout < 0 {
             return Err(ContractError::NegativePayout);
         }*/
 
         // 4: outcomePayout <= sum of offerCollateral and acceptCollateral
-        if self.outcome_payout > max_payout {
+        if self.outcome_payout > u64::from(max_payout) {
             return Err(ContractError::InvalidPayout);
         }
         Ok(())
