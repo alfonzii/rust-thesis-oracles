@@ -1,5 +1,6 @@
 // src/common/types.rs
 
+use std::fmt;
 use secp256k1_zkp;
 use secp256k1_zkp::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
@@ -135,13 +136,21 @@ impl Outcome for OutcomeBinStr {
     }
 }
 
-impl From<String> for OutcomeBinStr {
-    fn from(value: String) -> Self {
-        if !value.chars().all(|c| c == '0' || c == '1') {
-            panic!("OutcomeBinStr can only contain '0' and '1' characters.");
+impl TryFrom<String> for OutcomeBinStr {
+    type Error = OutcomeBinStrParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if let Some(invalid_char_at) = value.chars().position(|c| c != '0' && c != '1') {
+            Err(OutcomeBinStrParseError { invalid_char_at })
+        } else {
+            Ok(Self { value })
         }
-        Self { value }
     }
+}
+
+#[derive(Debug)]
+pub struct OutcomeBinStrParseError {
+    invalid_char_at: usize,
 }
 
 impl From<OutcomeBinStr> for String {
@@ -149,6 +158,14 @@ impl From<OutcomeBinStr> for String {
         outcome.value
     }
 }
+
+impl fmt::Display for OutcomeBinStrParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "invalid char at position {}", self.invalid_char_at)
+    }
+}
+
+impl std::error::Error for OutcomeBinStrParseError {}
 
 // ------------------ ContractInput and related structs ------------------
 
