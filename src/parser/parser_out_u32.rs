@@ -94,14 +94,6 @@ impl Parser<types::OutcomeU32> for SimpleOutU32Parser {
     fn parse_contract_input(
         contract_input: ContractInput,
     ) -> Result<ParsedContract<OutcomeU32>, Error> {
-        // Call validation first
-        contract_input.validate().map_err(|e| {
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("{:?} error - {} ", e, e),
-            )
-        })?;
-
         // At this point, if we have reached here, we can safely assume that the contract is valid
 
         // Reserve capacity for final vector based on number of possible outcomes (we avoid reallocating by doing this)
