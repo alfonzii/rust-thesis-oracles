@@ -196,7 +196,8 @@ impl ContractInput {
         }
 
         // Validate the rest
-        let sum_collaterals = self.offer_collateral + self.accept_collateral;
+        let sum_collaterals = self.offer_collateral.checked_add(self.accept_collateral)
+            .ok_or(ContractError::CollateralSumOverflow)?;
         self.contract_info.validate(sum_collaterals)?;
 
         Ok(())
