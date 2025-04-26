@@ -171,44 +171,82 @@ impl std::error::Error for OutcomeBinStrParseError {}
 #[serde(rename_all = "camelCase")]
 #[serde(try_from = "raw_contract_input::ContractInput")]
 pub struct ContractInput {
-    pub offer_collateral: NonZeroU64,  // Amount (btc cargo)
-    pub accept_collateral: NonZeroU64, // Amount (btc cargo)
-    pub fee_rate: NonZeroU64,
-    pub contract_info: ContractInfo,
+    offer_collateral: NonZeroU64,  // Amount (btc cargo)
+    accept_collateral: NonZeroU64, // Amount (btc cargo)
+    fee_rate: NonZeroU64,
+    contract_info: ContractInfo,
+}
+
+impl ContractInput {
+    pub fn total_collateral(&self) -> NonZeroU64 {
+        self.offer_collateral.checked_add(self.accept_collateral.into()).expect("this sum was already validated")
+    }
+
+    pub fn contract_info(&self) -> &ContractInfo {
+        &self.contract_info
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContractInfo {
-    pub contract_descriptor: ContractDescriptor,
-    pub oracle: OracleInput,
+    contract_descriptor: ContractDescriptor,
+    oracle: OracleInput,
+}
+
+impl ContractInfo {
+    pub fn contract_descriptor(&self) -> &ContractDescriptor {
+        &self.contract_descriptor
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContractDescriptor {
-    pub payout_intervals: Vec<PayoutInterval>,
+    payout_intervals: Vec<PayoutInterval>,
+}
+
+impl ContractDescriptor {
+    pub fn payout_intervals(&self) -> &[PayoutInterval] {
+        &self.payout_intervals
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayoutInterval {
-    pub payout_points: [PayoutPoint; 2],
+    payout_points: [PayoutPoint; 2],
+}
+
+impl PayoutInterval {
+    pub fn payout_points(&self) -> &[PayoutPoint; 2] {
+        &self.payout_points
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PayoutPoint {
-    pub event_outcome: u32,
-    pub outcome_payout: PayoutT, // Amount (btc cargo)
+    event_outcome: u32,
+    outcome_payout: PayoutT, // Amount (btc cargo)
+}
+
+impl PayoutPoint {
+    pub fn event_outcome(&self) -> u32 {
+        self.event_outcome
+    }
+
+    pub fn outcome_payout(&self) -> PayoutT {
+        self.outcome_payout
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(try_from = "raw_contract_input::OracleInput")]
 pub struct OracleInput {
-    pub public_key: PublicKey,
-    pub event_id: String,
-    pub nb_digits: u8,
+    public_key: PublicKey,
+    event_id: String,
+    nb_digits: u8,
 }
 
 mod raw_contract_input {
