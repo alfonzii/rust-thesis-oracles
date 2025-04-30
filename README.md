@@ -104,6 +104,7 @@ Special thanks to:
 
 - [@Tibo-lg](https://github.com/Tibo-lg) for his responsiveness, and work on [`rust-dlc`](https://github.com/p2pderivatives/rust-dlc), which laid the foundation for many of the ideas explored here.
 - [@siv2r](https://github.com/siv2r) for implementing Schnorr adaptor signatures in C for `secp256k1-zkp`, and for his help to hasten up building Rust wrappers around them. His support made it possible to focus on the benchmarking framework without being blocked on low-level cryptographic integration.
+- [@Kixunil](https://github.com/Kixunil) for his invaluable experience with the Rust language and for the time he dedicated to code review so that the project can better and more qualitatively reflect the standards used in Rust language.
 
 This project would not have been possible without their help and contributions to the open-source DLC ecosystem.
 
