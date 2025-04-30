@@ -2,7 +2,7 @@
 
 This contract input is a simplified and streamlined adaptation of the one used in `rust-dlc`
 
-Every benchmark run expects a DLC “contract-input” file in **JSON**.  
+Every high-level benchmark run expects a DLC “contract-input” file in **JSON**.  
 The parser deserialises it into `ContractInput`, validates a few sanity rules,
 then converts it to the internal `ParsedContract` structure.
 
